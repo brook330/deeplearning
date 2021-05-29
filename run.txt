@@ -1,0 +1,1 @@
+ nuitka  --nofollow-imports --nofollow-import-to=threadering  --plugin-enable=multiprocessing  --windows-icon-from-ico=caijin.ico  deeplearning.py
