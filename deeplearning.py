@@ -63,8 +63,6 @@ class Datainfo:
         tt = str((int(t * 1000)))
         ttt = str(int(round(t * 1000)))
     
-        #df  交易买卖比例
-
         headers = {
         'authority': 'www.okex.com',
         'sec-ch-ua': '^\\^',
@@ -91,12 +89,22 @@ class Datainfo:
 
         response = r.get('https://www.okex.com/v3/futures/pc/market/takerTradeVolume/ETH', headers=headers, params=params)
 
+
+        response2 = r.get('https://www.okex.com/v3/futures/pc/market/openInterestAndVolume/ETH', headers=headers, params=params)
+
         if response.cookies.get_dict(): #保持cookie有效 
                 s=r.session()
                 c = r.cookies.RequestsCookieJar()#定义一个cookie对象
                 c.set('cookie-name', 'cookie-value')#增加cookie的值
                 s.cookies.update(c)#更新s的cookie
                 s.get(url = 'https://www.okex.com/v3/futures/pc/market/takerTradeVolume/ETH?t='+tt+'&unitType=0')
+
+        if response2.cookies.get_dict(): #保持cookie有效 
+                s=r.session()
+                c = r.cookies.RequestsCookieJar()#定义一个cookie对象
+                c.set('cookie-name', 'cookie-value')#增加cookie的值
+                s.cookies.update(c)#更新s的cookie
+                s.get(url = 'https://www.okex.com/v3/futures/pc/market/openInterestAndVolume/ETH?t='+tt+'&unitType=0')
 
         df = pd.DataFrame(eval(json.dumps(response.json()))['data'])
         datelist = []
@@ -107,48 +115,12 @@ class Datainfo:
         df['plot']=numpy.divide(df['buyVolumes'].values.astype(numpy.float64),df['sellVolumes'].values.astype(numpy.float64))
         df = df[['timestamps','buyVolumes','sellVolumes','plot']]
 
-        #df3  交易量
-
-        headers = {
-            'authority': 'www.okex.com',
-            'sec-ch-ua': '^\\^',
-            'timeout': '10000',
-            'x-cdn': 'https://static.okex.com',
-            'devid': '7f1dea77-90cd-4746-a13f-a98bac4a333b',
-            'accept-language': 'zh-CN',
-            'sec-ch-ua-mobile': '?0',
-            'user-agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.77 Safari/537.36',
-            'accept': 'application/json',
-            'x-utc': '8',
-            'app-type': 'web',
-            'sec-fetch-site': 'same-origin',
-            'sec-fetch-mode': 'cors',
-            'sec-fetch-dest': 'empty',
-            'referer': 'https://www.okex.com/markets/swap-data/eth-usd',
-            'cookie': 'locale=zh_CN; _gcl_au=1.1.1849415495.1622314481; _ga=GA1.2.1506507962.'+str(tt)+'; _gid=GA1.2.256681666.'+str(tt)+'; amp_56bf9d=gqC_GMDGl4q5Tk-BJhT-oP...1f6snl1p6.1f6snloll.0.0.0',
-        }
-
-        params = (
-            ('t', str(ttt)),
-            ('unitType', '0'),
-        )
-
-        response2 = requests.get('https://www.okex.com/v3/futures/pc/market/openInterestAndVolume/ETH', headers=headers, params=params)
-
-        if response2.cookies.get_dict(): #保持cookie有效 
-                s=r.session()
-                c = r.cookies.RequestsCookieJar()#定义一个cookie对象
-                c.set('cookie-name', 'cookie-value')#增加cookie的值
-                s.cookies.update(c)#更新s的cookie
-                s.get(url = 'https://www.okex.com/v3/futures/pc/market/openInterestAndVolume/ETH?t='+tt+'&unitType=0')
-
-        
         df3 = pd.DataFrame(eval(json.dumps(response2.json()))['data'])
         df['openInterests'] = df3['openInterests']
 
         df.to_csv(f'./datas/okex/eth/ethusd.csv',index = False)
         df = pd.read_csv(f'./datas/okex/eth/ethusd.csv')
-        result = df['takerBuyVolValue'].values[-1]>df['takerBuyVolValue'].values[-2] and df['takerBuyVol'].values[-1]>df['takerBuyVol'].values[-2] and df['plot'].values[-1]>1 and df['plot'].values[-1] > df['plot'].values[-2] and df['openInterests'].values[-1] > df['openInterests'].values[-2]
+        result = df['plot'].values[-1]>1 and df['plot'].values[-1] > df['plot'].values[-2] and df['openInterests'].values[-1] > df['openInterests'].values[-2]
 
         Datainfo.saveinfo('获取数据完毕。。。   判断为： -->>'+str(result)+'   -->>我们是守护者，也是一群时刻对抗危险和疯狂的可怜虫 ！^_^')
 
