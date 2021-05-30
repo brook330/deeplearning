@@ -135,7 +135,8 @@ class Datainfo:
             
 
         dfclose = pd.read_csv(f'./datas/okex/eth/ethclose.csv')
-        df2 = pd.merge(df2, dfclose ,how='outer') 
+
+        df2 = pd.merge(df2, dfclose ,how = 'left',on='timestamps')  
 
         df2.to_csv(f'./datas/okex/eth/ethusd_final.csv',index = False)
         Datainfo.saveinfo('保存所有的 ethusd 数据完毕。。。   ')
@@ -238,7 +239,7 @@ class Datainfo:
         df2 = df1.copy()
         df2.loc[(df1.shape[0]-1),'buyinfo'] = float(lastprice)
         df2.loc[(df1.shape[0]-1),'sellinfo'] = float(lastprice)+10
-        df2.to_csv(f'./datas/okex/eth/ethusd_final.csv')
+        df2.to_csv(f'./datas/okex/eth/ethusd_final.csv',index = False)
         sendtext = '100倍杠杆，全仓委托：ETH-USD-SWAP -->> 2笔，价格是'+str(lastprice)+'，设置止盈完毕。。。'+str(float(lastprice)+10)
         Datainfo.save_finalinfo('我们是守护者，也是一群时刻对抗危险和疯狂的可怜虫 ！^_^     -->>'+sendtext)
         SendDingding.sender(sendtext)
