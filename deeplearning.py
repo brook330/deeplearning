@@ -50,7 +50,7 @@ class Datainfo:
 
     def isbuy():
 
-        time.sleep(15)
+        time.sleep(60)
 
         Datainfo.saveinfo('开始获取是否可以买入。。。')
 
