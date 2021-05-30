@@ -415,13 +415,14 @@ class Datainfo:
 
             time.sleep(15)
 
-            df = Datainfo.get_df_close()
-            api_key, secret_key, passphrase, flag = Datainfo.get_userinfo()    
+            Datainfo.get_df_close()
+                
 
+            df = pd.read_csv(f'./datas/okex/eth/ethclose.csv')
             if(df['close'].values[-1] < df['open'].values[-1]):
                 Datainfo.saveinfo('下跌趋势，不买入，直接返回。。。')
                 return 0
-
+            api_key, secret_key, passphrase, flag = Datainfo.get_userinfo()
             Datainfo.saveinfo('上升趋势，继续观察。。。')
             if(Datainfo.isbuy()):
 
@@ -506,7 +507,3 @@ if __name__ == '__main__':
 
     mywindowsmultiprocessing = Datainfo.mywindows_multiprocessing
     mywindowsmultiprocessing.run()
-
-    
-
-        
