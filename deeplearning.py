@@ -131,12 +131,28 @@ class Datainfo:
         if my_file.exists():
             df2 = pd.read_csv(f'./datas/okex/eth/ethusd_final.csv')
             #增加一行 append
-            df2.append(df.iloc[-1:])        
-        
+            df2 = pd.merge(df2, df ,how='outer') 
+            
+        dfclose = Datainfo.get_df_close()
+
+        df2 = pd.merge(df2, dfclose ,how='outer') 
+
         df2.to_csv(f'./datas/okex/eth/ethusd_final.csv',index = False)
         Datainfo.saveinfo('保存所有的 ethusd 数据完毕。。。   ')
         return  result
 
+
+    def get_df_close():
+
+        api_key, secret_key, passphrase, flag = Datainfo.get_userinfo()
+        # market api
+        marketAPI = Market.MarketAPI(api_key, secret_key, passphrase, False, flag)
+        result = marketAPI.get_candlesticks('ETH-USD-SWAP', bar='5m')
+
+        df = pd.DataFrame(result['data'])
+        df.columns = ['date','open','high','low','close','vol','p']
+        df = df.iloc[::-1]
+        return df 
     #获取用户API信息
     def get_userinfo():
 
@@ -193,7 +209,7 @@ class Datainfo:
         tradeAPI = Trade.TradeAPI(api_key, secret_key, passphrase, False, flag)
         # 批量下单  Place Multiple Orders
         result = tradeAPI.place_multiple_orders([
-             {'instId': 'ETH-USD-SWAP', 'tdMode': 'cross', 'side': 'buy', 'ordType': 'market', 'sz': '5',
+             {'instId': 'ETH-USD-SWAP', 'tdMode': 'cross', 'side': 'buy', 'ordType': 'market', 'sz': '2',
               'posSide': 'long',
               'clOrdId': 'a12344', 'tag': 'test1210'},
 
@@ -212,10 +228,15 @@ class Datainfo:
 
         # 策略委托下单  Place Algo Order
         result = tradeAPI.place_algo_order('ETH-USD-SWAP', 'cross', 'sell', ordType='conditional',
-                                            sz='5',posSide='long', tpTriggerPx=str(float(lastprice)+10), tpOrdPx=str(float(lastprice)+9))
+                                            sz='2',posSide='long', tpTriggerPx=str(float(lastprice)+10), tpOrdPx=str(float(lastprice)+9))
         Datainfo.saveinfo('设置止盈完毕。。。'+str(float(lastprice)+10))
 
-        sendtext = '100倍杠杆，全仓委托：ETH-USD-SWAP -->> 5笔，价格是'+str(lastprice)+'，设置止盈完毕。。。'+str(float(lastprice)+10)
+        df1 = pd.read_csv(f'./datas/okex/eth/ethusd_final.csv')
+        df2 = df1.copy()
+        df2.loc[(df1.shape[0]-1),'buyinfo'] = float(lastprice)
+        df2.loc[(df1.shape[0]-1),'sellinfo'] = float(lastprice)+10
+        df2.to_csv(f'./datas/okex/eth/ethusd_final.csv')
+        sendtext = '100倍杠杆，全仓委托：ETH-USD-SWAP -->> 2笔，价格是'+str(lastprice)+'，设置止盈完毕。。。'+str(float(lastprice)+10)
         Datainfo.save_finalinfo('我们是守护者，也是一群时刻对抗危险和疯狂的可怜虫 ！^_^     -->>'+sendtext)
         SendDingding.sender(sendtext)
 
@@ -398,14 +419,7 @@ class Datainfo:
         
         def getdatainfo(self):
 
-            api_key, secret_key, passphrase, flag = Datainfo.get_userinfo()
-            # market api
-            marketAPI = Market.MarketAPI(api_key, secret_key, passphrase, False, flag)
-            result = marketAPI.get_candlesticks('ETH-USD-SWAP', bar='5m')
-
-            df = pd.DataFrame(result['data'])
-            df.columns = ['date','open','high','low','close','vol','p']
-            df = df.iloc[::-1]
+            df = Datainfo.get_df_close()
                 
             if(df['close'].values[-1] < df['open'].values[-1]):
                 Datainfo.saveinfo('下跌趋势，不买人，直接返回。。。')
@@ -415,7 +429,6 @@ class Datainfo:
             if(Datainfo.isbuy()):
 
                 Datainfo.orderbuy(api_key, secret_key, passphrase, flag)
-
 
 
            
