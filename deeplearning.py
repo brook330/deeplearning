@@ -133,8 +133,8 @@ class Datainfo:
             #增加一行 append
             df2 = pd.merge(df2, df ,how='outer') 
             
-        dfclose = Datainfo.get_df_close()
 
+        dfclose = pd.read_csv(f'./datas/okex/eth/ethclose.csv')
         df2 = pd.merge(df2, dfclose ,how='outer') 
 
         df2.to_csv(f'./datas/okex/eth/ethusd_final.csv',index = False)
@@ -153,11 +153,12 @@ class Datainfo:
         df.columns = ['timestamps','open','high','low','close','vol','p']
         datelist = []
         for timestamp in df['timestamps']:
-            datelist.append(datetime.fromtimestamp(timestamp/1000).strftime("%Y-%m-%d %H:%M:%S"))
+            datelist.append(datetime.fromtimestamp(int(timestamp)/1000).strftime("%Y-%m-%d %H:%M:%S"))
 
         df['timestamps'] = pd.to_datetime(datelist)
 
         df = df.iloc[::-1]
+        df.to_csv(f'./datas/okex/eth/ethclose.csv',index = False)
         return df 
     #获取用户API信息
     def get_userinfo():
