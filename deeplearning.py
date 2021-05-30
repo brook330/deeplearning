@@ -124,23 +124,11 @@ class Datainfo:
 
         Datainfo.saveinfo('获取数据完毕。。。   判断为： -->>'+str(result)+'   -->>我们是守护者，也是一群时刻对抗危险和疯狂的可怜虫 ！^_^')
 
-        my_file = Path(f'./datas/okex/eth/ethusd_final.csv')
+        dfclose = pd.read_csv(f'./datas/okex/eth/ethclose.csv')
 
-        df2 = df.copy()
+        df2 = pd.merge(df,dfclose, on = 'timestamps',how='outer') 
 
-        if my_file.exists():
-            df2 = pd.read_csv(f'./datas/okex/eth/ethusd_final.csv')
-            #增加一行 append
-            df2 = pd.merge(df2, df ,how='outer') 
-
-        
-        df2 = df2.set_index('timestamps')
-
-        dfclose = pd.read_csv(f'./datas/okex/eth/ethclose.csv').set_index('timestamps')
-
-        df2 = df2.merge(dfclose,left_index=True, right_index=True,how='left')
-
-        df2.to_csv(f'./datas/okex/eth/ethusd_final.csv',index = True)
+        df2.to_csv(f'./datas/okex/eth/ethusd_final.csv',index = False)
         Datainfo.saveinfo('保存所有的 ethusd 数据完毕。。。   ')
         return  result
 
@@ -237,11 +225,11 @@ class Datainfo:
                                             sz='2',posSide='long', tpTriggerPx=str(float(lastprice)+10), tpOrdPx=str(float(lastprice)+9))
         Datainfo.saveinfo('设置止盈完毕。。。'+str(float(lastprice)+10))
 
-        df1 = pd.read_csv(f'./datas/okex/eth/ethusd_final.csv')
-        df2 = df1.copy()
-        df2.loc[(df1.shape[0]-1),'buyinfo'] = float(lastprice)
-        df2.loc[(df1.shape[0]-1),'sellinfo'] = float(lastprice)+10
-        df2.to_csv(f'./datas/okex/eth/ethusd_final.csv',index = False)
+        #df1 = pd.read_csv(f'./datas/okex/eth/ethusd_final.csv')
+        #df2 = df1.copy()
+        #df2.loc[(df1.shape[0]-1),'buyinfo'] = float(lastprice)
+        #df2.loc[(df1.shape[0]-1),'sellinfo'] = float(lastprice)+10
+        #df2.to_csv(f'./datas/okex/eth/ethusd_final.csv',index = False)
         sendtext = '100倍杠杆，全仓委托：ETH-USD-SWAP -->> 2笔，价格是'+str(lastprice)+'，设置止盈完毕。。。'+str(float(lastprice)+10)
         Datainfo.save_finalinfo('我们是守护者，也是一群时刻对抗危险和疯狂的可怜虫 ！^_^     -->>'+sendtext)
         SendDingding.sender(sendtext)
