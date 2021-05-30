@@ -151,7 +151,7 @@ class Datainfo:
 
         df = pd.DataFrame(result['data'])
         df.columns = ['timestamps','open','high','low','close','vol','p']
-
+        datelist = []
         for timestamp in df['timestamps']:
             datelist.append(datetime.fromtimestamp(timestamp/1000).strftime("%Y-%m-%d %H:%M:%S"))
 
