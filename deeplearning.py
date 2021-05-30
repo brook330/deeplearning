@@ -120,7 +120,7 @@ class Datainfo:
 
         df.to_csv(f'./datas/okex/eth/ethusd.csv',index = False)
         df = pd.read_csv(f'./datas/okex/eth/ethusd.csv')
-        result = df['plot'].values[-1]>1 and df['plot'].values[-1] > df['plot'].values[-2] and df['openInterests'].values[-1] > df['openInterests'].values[-2]
+        result = df['plot'].values[-1]>1 and df['buyVolumes'].values[-1] > df['buyVolumes'].values[-2] and df['openInterests'].values[-1] > df['openInterests'].values[-2]
 
         Datainfo.saveinfo('获取数据完毕。。。   判断为： -->>'+str(result)+'   -->>我们是守护者，也是一群时刻对抗危险和疯狂的可怜虫 ！^_^')
 
