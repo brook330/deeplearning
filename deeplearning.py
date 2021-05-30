@@ -50,7 +50,7 @@ class Datainfo:
 
     def isbuy():
 
-        time.sleep(60)
+        
 
         Datainfo.saveinfo('开始获取是否可以买入。。。')
 
@@ -132,11 +132,12 @@ class Datainfo:
             df2 = pd.read_csv(f'./datas/okex/eth/ethusd_final.csv')
             #增加一行 append
             df2 = pd.merge(df2, df ,how='outer') 
-            
+            df2 = pd.read_csv(f'./datas/okex/eth/ethusd_final.csv').set_index('timestamps')
+        
 
-        dfclose = pd.read_csv(f'./datas/okex/eth/ethclose.csv')
+        dfclose = pd.read_csv(f'./datas/okex/eth/ethclose.csv').set_index('timestamps')
 
-        df2 = pd.merge(df2, dfclose ,how = 'left',on='timestamps')  
+        df2 = df2.merge(dfclose, left_index=True, right_index=True, how='outer')
 
         df2.to_csv(f'./datas/okex/eth/ethusd_final.csv',index = False)
         Datainfo.saveinfo('保存所有的 ethusd 数据完毕。。。   ')
@@ -422,6 +423,8 @@ class Datainfo:
                 scheduler.shutdown()
         
         def getdatainfo(self):
+
+            time.sleep(15)
 
             df = Datainfo.get_df_close()
             api_key, secret_key, passphrase, flag = Datainfo.get_userinfo()    
