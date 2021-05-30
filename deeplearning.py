@@ -137,9 +137,9 @@ class Datainfo:
 
         dfclose = pd.read_csv(f'./datas/okex/eth/ethclose.csv').set_index('timestamps')
 
-        df2 = df2.merge(dfclose, left_index=True, right_index=True, how='outer')
+        df2 = df2.merge(dfclose, left_index=True, right_index=True, how='left')
 
-        df2.to_csv(f'./datas/okex/eth/ethusd_final.csv',index = False)
+        df2.to_csv(f'./datas/okex/eth/ethusd_final.csv',index = True)
         Datainfo.saveinfo('保存所有的 ethusd 数据完毕。。。   ')
         return  result
 
