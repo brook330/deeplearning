@@ -150,7 +150,7 @@ class Datainfo:
         result = marketAPI.get_candlesticks('ETH-USD-SWAP', bar='5m')
 
         df = pd.DataFrame(result['data'])
-        df.columns = ['date','open','high','low','close','vol','p']
+        df.columns = ['timestamps','open','high','low','close','vol','p']
         df = df.iloc[::-1]
         return df 
     #获取用户API信息
@@ -167,10 +167,6 @@ class Datainfo:
         # flag是实盘与模拟盘的切换参数 flag is the key parameter which can help you to change between demo and real trading.
         # flag = '1'  # 模拟盘 demo trading
         flag = '0'  # 实盘 real trading
-
-        Datainfo.saveinfo('获取API_KEY。。。')
-
-        
 
         return api_key,secret_key,passphrase,flag
 
@@ -420,7 +416,8 @@ class Datainfo:
         def getdatainfo(self):
 
             df = Datainfo.get_df_close()
-                
+            api_key, secret_key, passphrase, flag = Datainfo.get_userinfo()    
+
             if(df['close'].values[-1] < df['open'].values[-1]):
                 Datainfo.saveinfo('下跌趋势，不买人，直接返回。。。')
                 return 0
