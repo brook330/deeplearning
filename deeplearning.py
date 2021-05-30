@@ -151,6 +151,12 @@ class Datainfo:
 
         df = pd.DataFrame(result['data'])
         df.columns = ['timestamps','open','high','low','close','vol','p']
+
+        for timestamp in df['timestamps']:
+            datelist.append(datetime.fromtimestamp(timestamp/1000).strftime("%Y-%m-%d %H:%M:%S"))
+
+        df['timestamps'] = pd.to_datetime(datelist)
+
         df = df.iloc[::-1]
         return df 
     #获取用户API信息
@@ -419,7 +425,7 @@ class Datainfo:
             api_key, secret_key, passphrase, flag = Datainfo.get_userinfo()    
 
             if(df['close'].values[-1] < df['open'].values[-1]):
-                Datainfo.saveinfo('下跌趋势，不买人，直接返回。。。')
+                Datainfo.saveinfo('下跌趋势，不买入，直接返回。。。')
                 return 0
 
             Datainfo.saveinfo('上升趋势，继续观察。。。')
