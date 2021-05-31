@@ -133,6 +133,66 @@ class Datainfo:
         Datainfo.saveinfo('保存所有的 ethusd 数据完毕。。。   ')
         return  result
 
+    def getfullbuymarket():
+
+
+        Datainfo.saveinfo('开始获取是否可以买入ismarket。。。')
+
+        t = time.time()
+
+        #print (t)                       #原始时间数据
+        #print (int(t))                  #秒级时间戳
+        #print (int(round(t * 1000)))    #毫秒级时间戳
+        #print (int(round(t * 1000000))) #微秒级时间戳
+        tt = str((int(t * 1000)))
+        ttt = str(int(round(t * 1000)))
+
+        headers = {
+        'authority': 'www.okex.com',
+        'sec-ch-ua': '^\\^',
+        'timeout': '10000',
+        'x-cdn': 'https://static.okex.com',
+        'devid': '7f1dea77-90cd-4746-a13f-a98bac4a333b',
+        'accept-language': 'zh-CN',
+        'sec-ch-ua-mobile': '?0',
+        'user-agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.77 Safari/537.36',
+        'accept': 'application/json',
+        'x-utc': '8',
+        'app-type': 'web',
+        'sec-fetch-site': 'same-origin',
+        'sec-fetch-mode': 'cors',
+        'sec-fetch-dest': 'empty',
+        'referer': 'https://www.okex.com/markets/swap-info/eth-usd',
+        'cookie': 'locale=zh_CN; _gcl_au=1.1.1849415495.'+str(tt)+'; _ga=GA1.2.1506507962.'+str(tt)+'; _gid=GA1.2.256681666.'+str(tt)+'; first_ref=https^%^3A^%^2F^%^2Fwww.okex.com^%^2Fcaptcha^%^3Fto^%^3DaHR0cHM6Ly93d3cub2tleC5jb20vbWFya2V0cy9zd2FwLWRhdGEvZXRoLXVzZA^%^3D^%^3D; _gat_UA-35324627-3=1; amp_56bf9d=gqC_GMDGl4q5Tk-BJhT-oP...1f711b989.1f711fv58.0.2.2',
+        }
+
+        params = (
+        ('granularity', '900'),
+        ('size', '1000'),
+        ('t', str(ttt)),
+        )
+        response = r.get('https://www.okex.com/v2/perpetual/pc/public/instruments/ETH-USD-SWAP/candles', headers=headers, params=params)
+
+        if response.cookies.get_dict(): #保持cookie有效 
+                s=r.session()
+                c = r.cookies.RequestsCookieJar()#定义一个cookie对象
+                c.set('cookie-name', 'cookie-value')#增加cookie的值
+                s.cookies.update(c)#更新s的cookie
+                s.get(url = 'https://www.okex.com/v2/perpetual/pc/public/instruments/ETH-USD-SWAP/candles?granularity=900&size=1000&t='+str(ttt))
+        df = pd.DataFrame(eval(json.dumps(response.json()))['data'])
+        df.columns = ['timestamps','open','high','low','close','vol','p']
+        datelist = []
+        for timestamp in df['timestamps']:
+            datelist.append(timestamp.split('.000Z')[0].replace('T',' '))
+        df['timestamps'] = datelist
+        df['timestamps'] = pd.to_datetime(df['timestamps'])+pd.to_timedelta('8 hours')
+        df = Datainfo.getfulldata(df)
+
+        ismarket = df['p'].iloc[-1:].values[0]  > df['p'].iloc[-2:-1].values[0] and df['macd'].iloc[-1:].values[0]>df['macd'].iloc[-2:-1].values[0] and df['macd'].iloc[-1:].values[0]>0
+        Datainfo.saveinfo('ismarket。。。-->'+str(ismarket))
+
+        return ismarket
+
     def getfulldata(df):
         #获取参数历史数据
         df['will'] = ta.WILLR(df['high'].values,df['low'].values,df['close'].values,timeperiod=14)
@@ -179,47 +239,7 @@ class Datainfo:
 
         return df
 
-    def get_hour_df():
 
-        api_key, secret_key, passphrase, flag = Datainfo.get_userinfo()
-        # market api
-        marketAPI = Market.MarketAPI(api_key, secret_key, passphrase, False, flag)
-        result = marketAPI.get_candlesticks('ETH-USD-SWAP', bar='15m')
-
-        df = pd.DataFrame(result['data'])
-        df.columns = ['timestamps','open','high','low','close','vol','p']
-        datelist = []
-        for timestamp in df['timestamps']:
-            datelist.append(datetime.fromtimestamp(int(timestamp)/1000).strftime("%Y-%m-%d %H:%M:%S"))
-
-        df['timestamps'] = pd.to_datetime(datelist)
-
-        df = df.iloc[::-1]
-        
-
-
-        Datainfo.saveinfo('获取1小时数据完毕。。。')
-
-        return df
-
-    def get_df_close():
-
-        api_key, secret_key, passphrase, flag = Datainfo.get_userinfo()
-        # market api
-        marketAPI = Market.MarketAPI(api_key, secret_key, passphrase, False, flag)
-        result = marketAPI.get_candlesticks('ETH-USD-SWAP', bar='5m')
-
-        df = pd.DataFrame(result['data'])
-        df.columns = ['timestamps','open','high','low','close','vol','p']
-        datelist = []
-        for timestamp in df['timestamps']:
-            datelist.append(datetime.fromtimestamp(int(timestamp)/1000).strftime("%Y-%m-%d %H:%M:%S"))
-
-        df['timestamps'] = pd.to_datetime(datelist)
-
-        df = df.iloc[::-1]
-        df.to_csv(f'./datas/okex/eth/ethclose.csv',index = False)
-        return df 
     #获取用户API信息
     def get_userinfo():
 
@@ -272,7 +292,7 @@ class Datainfo:
         tradeAPI = Trade.TradeAPI(api_key, secret_key, passphrase, False, flag)
         # 批量下单  Place Multiple Orders
         result = tradeAPI.place_multiple_orders([
-             {'instId': 'ETH-USD-SWAP', 'tdMode': 'cross', 'side': 'buy', 'ordType': 'market', 'sz': '10',
+             {'instId': 'ETH-USD-SWAP', 'tdMode': 'cross', 'side': 'buy', 'ordType': 'market', 'sz': '20',
               'posSide': 'long',
               'clOrdId': 'a12344', 'tag': 'test1210'},
     
@@ -292,7 +312,7 @@ class Datainfo:
 
         # 策略委托下单  Place Algo Order
         result = tradeAPI.place_algo_order('ETH-USD-SWAP', 'cross', 'sell', ordType='conditional',
-                                            sz='10',posSide='long', tpTriggerPx=str(float(lastprice)+10), tpOrdPx=str(float(lastprice)+9))
+                                            sz='20',posSide='long', tpTriggerPx=str(float(lastprice)+10), tpOrdPx=str(float(lastprice)+9))
         Datainfo.saveinfo('设置止盈完毕。。。'+str(float(lastprice)+10))
 
         #df1 = pd.read_csv(f'./datas/okex/eth/ethusd_final.csv')
@@ -300,7 +320,7 @@ class Datainfo:
         #df2.loc[(df1.shape[0]-1),'buyinfo'] = float(lastprice)
         #df2.loc[(df1.shape[0]-1),'sellinfo'] = float(lastprice)+10
         #df2.to_csv(f'./datas/okex/eth/ethusd_final.csv',index = False)
-        sendtext = '100倍杠杆，全仓委托：ETH-USD-SWAP -->> 10笔，价格是'+str(lastprice)+'，设置止盈完毕。。。'+str(float(lastprice)+10)
+        sendtext = '100倍杠杆，全仓委托：ETH-USD-SWAP -->> 20笔，价格是'+str(lastprice)+'，设置止盈完毕。。。'+str(float(lastprice)+10)
         Datainfo.save_finalinfo('我们是守护者，也是一群时刻对抗危险和疯狂的可怜虫 ！^_^     -->>'+sendtext)
         SendDingding.sender(sendtext)
 
@@ -485,15 +505,7 @@ class Datainfo:
 
             time.sleep(15)
 
-            Datainfo.get_df_close()
-                
-
-            #df = pd.read_csv(f'./datas/okex/eth/ethclose.csv')
-            #if(df['close'].values[-1] < df['open'].values[-1]):
-            #    Datainfo.saveinfo('下跌趋势，不买入，直接返回。。。')
-            #    return 0
-            df = Datainfo.get_hour_df()
-            if(df['close'].values[-1] < df['open'].values[-1]):
+            if(Datainfo.getfullbuymarket()):
                 Datainfo.saveinfo('下跌趋势，不买入，直接返回。。。')
                 return 0
             api_key, secret_key, passphrase, flag = Datainfo.get_userinfo()
