@@ -496,7 +496,7 @@ class Datainfo:
         def okex5M_buy(self):
 
             scheduler = BlockingScheduler()
-            scheduler.add_job((self.getdatainfo), 'cron', minute='*/1')
+            scheduler.add_job((self.getdatainfo), 'cron', minute='*/5')
             print(scheduler.get_jobs())
             try:
                 scheduler.start()
@@ -506,14 +506,19 @@ class Datainfo:
         def getdatainfo(self):
 
             time.sleep(15)
-
-            if(Datainfo.getfullbuymarket()):
+            isbuy  =  Datainfo.getfullbuymarket()
+            type(isbuy)
+            if(isbuy):
                 Datainfo.saveinfo('下跌趋势，不买入，直接返回。。。')
-            else:
+                return
+            if(not Datainfo.getfullbuymarket()):
                 Datainfo.saveinfo('上升趋势，继续观察。。。')
                 if(Datainfo.isbuy()):
                     api_key, secret_key, passphrase, flag = Datainfo.get_userinfo()
                     Datainfo.orderbuy(api_key, secret_key, passphrase, flag)
+            else:
+                Datainfo.saveinfo('下跌趋势，不买入，直接返回。。。')
+                return 
 
 
            
