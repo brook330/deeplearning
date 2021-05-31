@@ -12,6 +12,7 @@ from sklearn import svm
 from sklearn.linear_model import LogisticRegression
 from sklearn.model_selection import train_test_split
 import hmac
+import talib as ta
 import hashlib
 import base64
 import urllib.parse
@@ -132,6 +133,74 @@ class Datainfo:
         Datainfo.saveinfo('保存所有的 ethusd 数据完毕。。。   ')
         return  result
 
+    def getfulldata(df):
+        #获取参数历史数据
+        df['will'] = ta.WILLR(df['high'].values,df['low'].values,df['close'].values,timeperiod=14)
+        df['upper'], df['middle'], df['lower'] = ta.BBANDS(
+                        df.close.values,
+                        timeperiod=20,
+                        # number of non-biased standard deviations from the mean
+                        nbdevup=2,
+                        nbdevdn=2,
+                        # Moving average type: simple moving average here
+                        matype=0)
+        df["rsi"] = ta.RSI(df['close'], timeperiod=14)
+        df['slowk'], df['slowd'] = ta.STOCH(df['high'].values,
+                                df['low'].values,
+                                df['close'].values,
+                                fastk_period=9,
+                                slowk_period=3,
+                                slowk_matype=0,
+                                slowd_period=3,
+                                slowd_matype=0)
+        df["DEMA"] = ta.DEMA(df['close'].values, timeperiod=30)
+        # MA - Moving average 移动平均线
+        # 函数名：MA
+        # 名称： 移动平均线
+        # 简介：移动平均线，Moving Average，简称MA，原本的意思是移动平均，由于我们将其制作成线形，所以一般称之为移动平均线，简称均线。它是将某一段时间的收盘价之和除以该周期。 比如日线MA5指5天内的收盘价除以5 。
+        # real = MA(close, timeperiod=30, matype=0)
+        df["MA"] = ta.MA(df['close'].values, timeperiod=30, matype=0)
+        # EMA和MACD
+        # 调用talib计算6日指数移动平均线的值
+        df['EMA12'] = ta.EMA(np.array(df['close'].values), timeperiod=6)
+        df['EMA26'] = ta.EMA(np.array(df['close'].values), timeperiod=12)
+        df["MACD_macd"],df["MACD_macdsignal"],df["MACD_macdhist"] = ta.MACD(df['close'].values, fastperiod=12, slowperiod=26, signalperiod=60)
+        df['macd'] = 2*(df["MACD_macd"]-df["MACD_macdsignal"])
+        df['upper'], df['middle'], df['lower'] = ta.BBANDS(
+                    df.close.values,
+                    timeperiod=26,
+                    # number of non-biased standard deviations from the mean
+                    nbdevup=2,
+                    nbdevdn=2,
+                    # Moving average type: simple moving average here
+                    matype=0)
+
+        
+
+        return df
+
+    def get_hour_df():
+
+        api_key, secret_key, passphrase, flag = Datainfo.get_userinfo()
+        # market api
+        marketAPI = Market.MarketAPI(api_key, secret_key, passphrase, False, flag)
+        result = marketAPI.get_candlesticks('ETH-USD-SWAP', bar='15m')
+
+        df = pd.DataFrame(result['data'])
+        df.columns = ['timestamps','open','high','low','close','vol','p']
+        datelist = []
+        for timestamp in df['timestamps']:
+            datelist.append(datetime.fromtimestamp(int(timestamp)/1000).strftime("%Y-%m-%d %H:%M:%S"))
+
+        df['timestamps'] = pd.to_datetime(datelist)
+
+        df = df.iloc[::-1]
+        
+
+
+        Datainfo.saveinfo('获取1小时数据完毕。。。')
+
+        return df
 
     def get_df_close():
 
@@ -203,12 +272,10 @@ class Datainfo:
         tradeAPI = Trade.TradeAPI(api_key, secret_key, passphrase, False, flag)
         # 批量下单  Place Multiple Orders
         result = tradeAPI.place_multiple_orders([
-             {'instId': 'ETH-USD-SWAP', 'tdMode': 'cross', 'side': 'buy', 'ordType': 'market', 'sz': '5',
+             {'instId': 'ETH-USD-SWAP', 'tdMode': 'cross', 'side': 'buy', 'ordType': 'market', 'sz': '10',
               'posSide': 'long',
               'clOrdId': 'a12344', 'tag': 'test1210'},
-              {'instId': 'ETH-USD-SWAP', 'tdMode': 'cross', 'side': 'buy', 'ordType': 'market', 'sz': '5',
-              'posSide': 'long',
-              'clOrdId': 'a12344', 'tag': 'test1210'}
+    
 
          ])
         print(result)
@@ -220,7 +287,7 @@ class Datainfo:
         Datainfo.saveinfo('获取最新价格。。。'+str(lastprice))
         
         # 调整保证金  Increase/Decrease margint
-        result = accountAPI.Adjustment_margin('ETH-USD-SWAP', 'short', 'add', '10')
+        result = accountAPI.Adjustment_margin('ETH-USD-SWAP', 'short', 'add', '5')
         Datainfo.saveinfo('调整保证金完毕。。。')
 
         # 策略委托下单  Place Algo Order
@@ -421,7 +488,11 @@ class Datainfo:
             Datainfo.get_df_close()
                 
 
-            df = pd.read_csv(f'./datas/okex/eth/ethclose.csv')
+            #df = pd.read_csv(f'./datas/okex/eth/ethclose.csv')
+            #if(df['close'].values[-1] < df['open'].values[-1]):
+            #    Datainfo.saveinfo('下跌趋势，不买入，直接返回。。。')
+            #    return 0
+            df = Datainfo.get_hour_df()
             if(df['close'].values[-1] < df['open'].values[-1]):
                 Datainfo.saveinfo('下跌趋势，不买入，直接返回。。。')
                 return 0
