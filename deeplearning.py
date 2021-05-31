@@ -190,7 +190,14 @@ class Datainfo:
         df = pd.read_csv(f'./datas/okex/eth/close.csv')
         df = Datainfo.getfulldata(df)
 
-        ismarket = df['p'].iloc[-1:].values[0]  > df['p'].iloc[-2:-1].values[0] and df['macd'].iloc[-1:].values[0]>df['macd'].iloc[-2:-1].values[0] and df['macd'].iloc[-1:].values[0]>0
+        ismarket = bool
+
+
+        if(df['p'].iloc[-1:].values[0]  > df['p'].iloc[-2:-1].values[0] and df['macd'].iloc[-1:].values[0]>df['macd'].iloc[-2:-1].values[0] and df['macd'].iloc[-1:].values[0]>0):
+            ismarket = True
+        else:
+            ismarket = False
+
         Datainfo.saveinfo('ismarket。。。-->'+str(ismarket))
 
         return ismarket
@@ -314,15 +321,15 @@ class Datainfo:
 
         # 策略委托下单  Place Algo Order
         result = tradeAPI.place_algo_order('ETH-USD-SWAP', 'cross', 'sell', ordType='conditional',
-                                            sz='20',posSide='long', tpTriggerPx=str(float(lastprice)+50), tpOrdPx=str(float(lastprice)+49))
-        Datainfo.saveinfo('设置止盈完毕。。。'+str(float(lastprice)+50))
+                                            sz='20',posSide='long', tpTriggerPx=str(float(lastprice)+20), tpOrdPx=str(float(lastprice)+19))
+        Datainfo.saveinfo('设置止盈完毕。。。'+str(float(lastprice)+20))
 
         #df1 = pd.read_csv(f'./datas/okex/eth/ethusd_final.csv')
         #df2 = df1.copy()
         #df2.loc[(df1.shape[0]-1),'buyinfo'] = float(lastprice)
         #df2.loc[(df1.shape[0]-1),'sellinfo'] = float(lastprice)+10
         #df2.to_csv(f'./datas/okex/eth/ethusd_final.csv',index = False)
-        sendtext = '100倍杠杆，全仓委托：ETH-USD-SWAP -->> 20笔，价格是'+str(lastprice)+'，设置止盈完毕。。。'+str(float(lastprice)+50)
+        sendtext = '100倍杠杆，全仓委托：ETH-USD-SWAP -->> 20笔，价格是'+str(lastprice)+'，设置止盈完毕。。。'+str(float(lastprice)+20)
         Datainfo.save_finalinfo('我们是守护者，也是一群时刻对抗危险和疯狂的可怜虫 ！^_^     -->>'+sendtext)
         SendDingding.sender(sendtext)
 
@@ -496,7 +503,7 @@ class Datainfo:
         def okex5M_buy(self):
 
             scheduler = BlockingScheduler()
-            scheduler.add_job((self.getdatainfo), 'cron', minute='*/5')
+            scheduler.add_job((self.getdatainfo), 'cron', minute='*/1')
             print(scheduler.get_jobs())
             try:
                 scheduler.start()
@@ -506,19 +513,19 @@ class Datainfo:
         def getdatainfo(self):
 
             time.sleep(15)
+
             isbuy  =  Datainfo.getfullbuymarket()
-            type(isbuy)
-            if(isbuy):
+
+            if(not isbuy):
                 Datainfo.saveinfo('下跌趋势，不买入，直接返回。。。')
                 return
-            if(not Datainfo.getfullbuymarket()):
+
+            if(isbuy):
                 Datainfo.saveinfo('上升趋势，继续观察。。。')
                 if(Datainfo.isbuy()):
                     api_key, secret_key, passphrase, flag = Datainfo.get_userinfo()
                     Datainfo.orderbuy(api_key, secret_key, passphrase, flag)
-            else:
-                Datainfo.saveinfo('下跌趋势，不买入，直接返回。。。')
-                return 
+
 
 
            
