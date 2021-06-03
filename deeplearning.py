@@ -135,8 +135,21 @@ class Datainfo:
 
     def getfullbuymarket():
 
-
+        
         Datainfo.saveinfo('开始获取是否可以买入ismarket。。。')
+
+        api_key,secret_key,passphrase,flag = Datainfo.get_userinfo()
+
+        #判断订单是否大于10单，大于则不买入
+        # trade api
+        tradeAPI = Trade.TradeAPI(api_key, secret_key, passphrase, False, flag)
+        list_string_buy = ['buy']
+        list_string_sell = ['sell']
+        list_text = list(pd.DataFrame(eval(str(tradeAPI.get_fills()))['data'])['side'].head(20).values)
+        all_words_buy = list(filter(lambda text: all([word in text for word in list_string_buy]), list_text ))
+        all_words_sell = list(filter(lambda text: all([word in text for word in list_string_sell]), list_text ))
+        if(len(all_words_buy) - len(all_words_sell)>10):
+            return False
 
         t = time.time()
 
@@ -193,7 +206,7 @@ class Datainfo:
         ismarket = bool
 
 
-        if(df['p'].iloc[-1:].values[0]  > df['p'].iloc[-2:-1].values[0]  and df['macd'].iloc[-1:].values[0]>0 and df['close'].iloc[-1:].values[0] > df['middle'].iloc[-1:].values[0] ):
+        if(df['macd'].iloc[-1:].values[0] > df['macd'].iloc[-2:-1].values[0] and df['macd'].iloc[-1:].values[0] >0):
             ismarket = True
         else:
             ismarket = False
@@ -301,7 +314,7 @@ class Datainfo:
         tradeAPI = Trade.TradeAPI(api_key, secret_key, passphrase, False, flag)
         # 批量下单  Place Multiple Orders
         result = tradeAPI.place_multiple_orders([
-             {'instId': 'ETH-USD-SWAP', 'tdMode': 'cross', 'side': 'buy', 'ordType': 'market', 'sz': '20',
+             {'instId': 'ETH-USD-SWAP', 'tdMode': 'cross', 'side': 'buy', 'ordType': 'market', 'sz': '3',
               'posSide': 'long',
               'clOrdId': 'a12344', 'tag': 'test1210'},
     
@@ -321,7 +334,7 @@ class Datainfo:
 
         # 策略委托下单  Place Algo Order
         result = tradeAPI.place_algo_order('ETH-USD-SWAP', 'cross', 'sell', ordType='conditional',
-                                            sz='20',posSide='long', tpTriggerPx=str(float(lastprice)+20), tpOrdPx=str(float(lastprice)+19))
+                                            sz='3',posSide='long', tpTriggerPx=str(float(lastprice)+20), tpOrdPx=str(float(lastprice)+19))
         Datainfo.saveinfo('设置止盈完毕。。。'+str(float(lastprice)+20))
 
         #df1 = pd.read_csv(f'./datas/okex/eth/ethusd_final.csv')
@@ -329,7 +342,7 @@ class Datainfo:
         #df2.loc[(df1.shape[0]-1),'buyinfo'] = float(lastprice)
         #df2.loc[(df1.shape[0]-1),'sellinfo'] = float(lastprice)+10
         #df2.to_csv(f'./datas/okex/eth/ethusd_final.csv',index = False)
-        sendtext = '100倍杠杆，全仓委托：ETH-USD-SWAP -->> 20笔，价格是'+str(lastprice)+'，设置止盈完毕。。。'+str(float(lastprice)+20)
+        sendtext = '100倍杠杆，全仓委托：ETH-USD-SWAP -->> 3笔，价格是'+str(lastprice)+'，设置止盈完毕。。。'+str(float(lastprice)+20)
         Datainfo.save_finalinfo('我们是守护者，也是一群时刻对抗危险和疯狂的可怜虫 ！^_^     -->>'+sendtext)
         SendDingding.sender(sendtext)
 
