@@ -36,6 +36,8 @@ import okex.Public_api as Public
 import okex.Trade_api as Trade
 import okex.subAccount_api as SubAccount
 import okex.status_api as Status
+import statsmodels.api as sm
+import statsmodels.formula.api as smf
 
 
 
@@ -53,85 +55,27 @@ class Datainfo:
 
         
 
-        Datainfo.saveinfo('开始获取是否可以买入。。。')
+        Datainfo.getfullbuymarket()
+        df = pd.read_csv(f'./datas/okex/eth/close.csv')
+        X =df[['timestamps','open','high','low','vol','p','will','upper','middle','lower','rsi','slowk','slowd','DEMA','MA','EMA12','EMA26','MACD_macd','MACD_macdsignal','MACD_macdhist','macd']]
+        Y = df['close']
+        X = sm.add_constant(X)
+        Y = np.array(Y)
+        model =  sm.OLS(Y.astype(float), X.astype(float)).fit()
+        predictions = model.predict(X)
+        result = predictions.values[-1]
+        print(result)
 
-        t = time.time()
+        flag = False
 
-        #print (t)                       #原始时间数据
-        #print (int(t))                  #秒级时间戳
-        #print (int(round(t * 1000)))    #毫秒级时间戳
-        #print (int(round(t * 1000000))) #微秒级时间戳
-        tt = str((int(t * 1000)))
-        ttt = str(int(round(t * 1000)))
-    
-        headers = {
-        'authority': 'www.okex.com',
-        'sec-ch-ua': '^\\^',
-        'timeout': '10000',
-        'x-cdn': 'https://static.okex.com',
-        'devid': '7f1dea77-90cd-4746-a13f-a98bac4a333b',
-        'accept-language': 'zh-CN',
-        'sec-ch-ua-mobile': '?0',
-        'user-agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.77 Safari/537.36',
-        'accept': 'application/json',
-        'x-utc': '8',
-        'app-type': 'web',
-        'sec-fetch-site': 'same-origin',
-        'sec-fetch-mode': 'cors',
-        'sec-fetch-dest': 'empty',
-        'referer': 'https://www.okex.com/markets/swap-data/eth-usd',
-        'cookie': 'locale=zh_CN; _gcl_au=1.1.1849415495.'+str(tt)+'; _ga=GA1.2.1506507962.'+tt+'; _gid=GA1.2.256681666.'+tt+'; amp_56bf9d=gqC_GMDGl4q5Tk-BJhT-oP...1f6snl1p6.1f6snloll.0.0.0',
-        }
+        if(result > predictions.values[-2] and df['close'].values[-1] < result):
+            flag = True
+            Datainfo.save_finalinfo('获取数据完毕。。。   判断为： -->>'+str(flag)+"  close-->>"+str(df['close'].values[-1])+"  预测结果-->>"+str(result)+'   -->>我们是守护者，也是一群时刻对抗危险和疯狂的可怜虫 ！^_^')
 
-        params = (
-            ('t', str(tt)),
-            ('unitType', '0'),
-        )
+        Datainfo.saveinfo('获取数据完毕。。。   判断为： -->>'+str(flag)+"  close-->>"+str(df['close'].values[-1])+"  预测结果-->>"+str(result)+'   -->>我们是守护者，也是一群时刻对抗危险和疯狂的可怜虫 ！^_^')
 
-        response = r.get('https://www.okex.com/v3/futures/pc/market/takerTradeVolume/ETH', headers=headers, params=params)
+        return flag
 
-
-        response2 = r.get('https://www.okex.com/v3/futures/pc/market/openInterestAndVolume/ETH', headers=headers, params=params)
-
-        if response.cookies.get_dict(): #保持cookie有效 
-                s=r.session()
-                c = r.cookies.RequestsCookieJar()#定义一个cookie对象
-                c.set('cookie-name', 'cookie-value')#增加cookie的值
-                s.cookies.update(c)#更新s的cookie
-                s.get(url = 'https://www.okex.com/v3/futures/pc/market/takerTradeVolume/ETH?t='+tt+'&unitType=0')
-
-        if response2.cookies.get_dict(): #保持cookie有效 
-                s=r.session()
-                c = r.cookies.RequestsCookieJar()#定义一个cookie对象
-                c.set('cookie-name', 'cookie-value')#增加cookie的值
-                s.cookies.update(c)#更新s的cookie
-                s.get(url = 'https://www.okex.com/v3/futures/pc/market/openInterestAndVolume/ETH?t='+tt+'&unitType=0')
-
-        df = pd.DataFrame(eval(json.dumps(response.json()))['data'])
-        datelist = []
-        for timestamp in df['timestamps']:
-            datelist.append(datetime.fromtimestamp(timestamp/1000).strftime("%Y-%m-%d %H:%M:%S"))
-
-        df['timestamps'] = pd.to_datetime(datelist)
-        df['plot']=numpy.divide(df['buyVolumes'].values.astype(numpy.float64),df['sellVolumes'].values.astype(numpy.float64))
-        df = df[['timestamps','buyVolumes','sellVolumes','plot']]
-
-        df3 = pd.DataFrame(eval(json.dumps(response2.json()))['data'])
-        df['openInterests'] = df3['openInterests']
-
-        df.to_csv(f'./datas/okex/eth/ethusd.csv',index = False)
-        df = pd.read_csv(f'./datas/okex/eth/ethusd.csv')
-        result = df['plot'].values[-1]>1 and df['buyVolumes'].values[-1] > df['buyVolumes'].values[-2] 
-
-        Datainfo.saveinfo('获取数据完毕。。。   判断为： -->>'+str(result)+'   -->>我们是守护者，也是一群时刻对抗危险和疯狂的可怜虫 ！^_^')
-
-        dfclose = pd.read_csv(f'./datas/okex/eth/ethclose.csv')
-
-        df2 = pd.merge(df,dfclose, on = 'timestamps',how='outer') 
-
-        df2.to_csv(f'./datas/okex/eth/ethusd_final.csv',index = False)
-        Datainfo.saveinfo('保存所有的 ethusd 数据完毕。。。   ')
-        return  result
 
     def getfullbuymarket():
 
@@ -142,14 +86,14 @@ class Datainfo:
 
         #判断订单是否大于10单，大于则不买入
         # trade api
-        tradeAPI = Trade.TradeAPI(api_key, secret_key, passphrase, False, flag)
-        list_string_buy = ['buy']
-        list_string_sell = ['sell']
-        list_text = list(pd.DataFrame(eval(str(tradeAPI.get_fills()))['data'])['side'].head(20).values)
-        all_words_buy = list(filter(lambda text: all([word in text for word in list_string_buy]), list_text ))
-        all_words_sell = list(filter(lambda text: all([word in text for word in list_string_sell]), list_text ))
-        if(len(all_words_buy) - len(all_words_sell)>10):
-            return False
+        #tradeAPI = Trade.TradeAPI(api_key, secret_key, passphrase, False, flag)
+        #list_string_buy = ['buy']
+        #list_string_sell = ['sell']
+        #list_text = list(pd.DataFrame(eval(str(tradeAPI.get_fills()))['data'])['side'].head(20).values)
+        #all_words_buy = list(filter(lambda text: all([word in text for word in list_string_buy]), list_text ))
+        #all_words_sell = list(filter(lambda text: all([word in text for word in list_string_sell]), list_text ))
+        #if(len(all_words_buy) - len(all_words_sell)>5):
+        #    return False
 
         t = time.time()
 
@@ -180,7 +124,7 @@ class Datainfo:
         }
 
         params = (
-        ('granularity', '900'),
+        ('granularity', '300'),
         ('size', '1000'),
         ('t', str(ttt)),
         )
@@ -199,21 +143,11 @@ class Datainfo:
             datelist.append(timestamp.split('.000Z')[0].replace('T',' '))
         df['timestamps'] = datelist
         df['timestamps'] = pd.to_datetime(df['timestamps'])+pd.to_timedelta('8 hours')
+        df['timestamps'] = df['timestamps'].apply(lambda x:time.mktime(time.strptime(str(x),'%Y-%m-%d %H:%M:%S')))
+        #print(df['timestamps'])
         df.to_csv(f'./datas/okex/eth/close.csv',index = False)
         df = pd.read_csv(f'./datas/okex/eth/close.csv')
-        df = Datainfo.getfulldata(df)
-
-        ismarket = bool
-
-
-        if(df['macd'].iloc[-1:].values[0] > df['macd'].iloc[-2:-1].values[0] and df['macd'].iloc[-1:].values[0] >0):
-            ismarket = True
-        else:
-            ismarket = False
-
-        Datainfo.saveinfo('ismarket。。。-->'+str(ismarket))
-
-        return ismarket
+        Datainfo.getfulldata(df)
 
     def getfulldata(df):
         #获取参数历史数据
@@ -258,8 +192,7 @@ class Datainfo:
                     matype=0)
 
         
-
-        return df
+        df.to_csv(f'./datas/okex/eth/close.csv',index = False)
 
 
     #获取用户API信息
@@ -314,7 +247,7 @@ class Datainfo:
         tradeAPI = Trade.TradeAPI(api_key, secret_key, passphrase, False, flag)
         # 批量下单  Place Multiple Orders
         result = tradeAPI.place_multiple_orders([
-             {'instId': 'ETH-USD-SWAP', 'tdMode': 'cross', 'side': 'buy', 'ordType': 'market', 'sz': '3',
+             {'instId': 'ETH-USD-SWAP', 'tdMode': 'cross', 'side': 'buy', 'ordType': 'market', 'sz': '1',
               'posSide': 'long',
               'clOrdId': 'a12344', 'tag': 'test1210'},
     
@@ -334,15 +267,11 @@ class Datainfo:
 
         # 策略委托下单  Place Algo Order
         result = tradeAPI.place_algo_order('ETH-USD-SWAP', 'cross', 'sell', ordType='conditional',
-                                            sz='3',posSide='long', tpTriggerPx=str(float(lastprice)+20), tpOrdPx=str(float(lastprice)+19))
-        Datainfo.saveinfo('设置止盈完毕。。。'+str(float(lastprice)+20))
+                                            sz='1',posSide='long', tpTriggerPx=str(float(lastprice)+20), tpOrdPx=str(float(lastprice)+5))
+        Datainfo.saveinfo('设置止盈完毕。。。'+str(float(lastprice)+5))
 
-        #df1 = pd.read_csv(f'./datas/okex/eth/ethusd_final.csv')
-        #df2 = df1.copy()
-        #df2.loc[(df1.shape[0]-1),'buyinfo'] = float(lastprice)
-        #df2.loc[(df1.shape[0]-1),'sellinfo'] = float(lastprice)+10
-        #df2.to_csv(f'./datas/okex/eth/ethusd_final.csv',index = False)
-        sendtext = '100倍杠杆，全仓委托：ETH-USD-SWAP -->> 3笔，价格是'+str(lastprice)+'，设置止盈完毕。。。'+str(float(lastprice)+20)
+
+        sendtext = '100倍杠杆，全仓委托：ETH-USD-SWAP -->> 1笔，价格是'+str(lastprice)+'，设置止盈完毕。。。'+str(float(lastprice)+5)
         Datainfo.save_finalinfo('我们是守护者，也是一群时刻对抗危险和疯狂的可怜虫 ！^_^     -->>'+sendtext)
         SendDingding.sender(sendtext)
 
@@ -527,17 +456,16 @@ class Datainfo:
 
             time.sleep(15)
 
-            isbuy  =  Datainfo.getfullbuymarket()
+            isbuy  =  Datainfo.isbuy()
 
             if(not isbuy):
-                Datainfo.saveinfo('下跌趋势，不买入，直接返回。。。')
+                Datainfo.saveinfo('预测不买入。。。')
                 return
 
             if(isbuy):
-                Datainfo.saveinfo('上升趋势，继续观察。。。')
-                if(Datainfo.isbuy()):
-                    api_key, secret_key, passphrase, flag = Datainfo.get_userinfo()
-                    Datainfo.orderbuy(api_key, secret_key, passphrase, flag)
+                Datainfo.saveinfo('预测买入。。。')
+                api_key, secret_key, passphrase, flag = Datainfo.get_userinfo()
+                Datainfo.orderbuy(api_key, secret_key, passphrase, flag)
 
 
 
