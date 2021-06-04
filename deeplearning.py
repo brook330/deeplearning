@@ -271,11 +271,11 @@ class Datainfo:
 
         # 策略委托下单  Place Algo Order
         result = tradeAPI.place_algo_order('ETH-USD-SWAP', 'cross', 'sell', ordType='conditional',
-                                            sz='1',posSide='long', tpTriggerPx=str(float(lastprice)+20), tpOrdPx=str(float(lastprice)+5))
-        Datainfo.saveinfo('设置止盈完毕。。。'+str(float(lastprice)+5))
+                                            sz='1',posSide='long', tpTriggerPx=str(int(lastprice)+5), tpOrdPx=str(int(lastprice)+5))
+        Datainfo.saveinfo('设置止盈完毕。。。'+str(int(lastprice)+5))
 
 
-        sendtext = '100倍杠杆，全仓委托：ETH-USD-SWAP -->> 1笔，价格是'+str(lastprice)+'，设置止盈完毕。。。'+str(float(lastprice)+5)
+        sendtext = '100倍杠杆，全仓委托：ETH-USD-SWAP -->> 1笔，价格是'+str(lastprice)+'，设置止盈完毕。。。'+str(int(lastprice)+5)
         Datainfo.save_finalinfo('我们是守护者，也是一群时刻对抗危险和疯狂的可怜虫 ！^_^     -->>'+sendtext)
         SendDingding.sender(sendtext)
 
