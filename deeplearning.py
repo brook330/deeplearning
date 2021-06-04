@@ -67,13 +67,15 @@ class Datainfo:
         print(result)
 
         flag = False
+        sendtext = '获取数据完毕。。。   判断为： -->>'+str(flag)+"  close-->>"+str(df['close'].values[-1])+"  预测结果-->>"+str(result)+'   -->>我们是守护者，也是一群时刻对抗危险和疯狂的可怜虫 ！^_^'
 
         if(result > predictions.values[-2] and df['close'].values[-1] < result):
             flag = True
-            Datainfo.save_finalinfo('获取数据完毕。。。   判断为： -->>'+str(flag)+"  close-->>"+str(df['close'].values[-1])+"  预测结果-->>"+str(result)+'   -->>我们是守护者，也是一群时刻对抗危险和疯狂的可怜虫 ！^_^')
+            Datainfo.save_finalinfo(sendtext)
 
-        Datainfo.saveinfo('获取数据完毕。。。   判断为： -->>'+str(flag)+"  close-->>"+str(df['close'].values[-1])+"  预测结果-->>"+str(result)+'   -->>我们是守护者，也是一群时刻对抗危险和疯狂的可怜虫 ！^_^')
+        Datainfo.saveinfo(sendtext)
 
+        print(sendtext)
         return flag
 
 
@@ -192,7 +194,7 @@ class Datainfo:
                     matype=0)
 
         
-        df.to_csv(f'./datas/okex/eth/close.csv',index = False)
+        df.fillna(0.1).to_csv(f'./datas/okex/eth/close.csv',index = False)
 
 
     #获取用户API信息
