@@ -51,14 +51,14 @@ class DateEncoder(json.JSONEncoder):
 
 class Datainfo:
 
-    def isbuy():
+    def isbuy(minute):
 
         
 
-        if(Datainfo.getfullbuymarket()):
-            df = pd.read_csv(f'./datas/okex/eth/close.csv')
-            X =df[['timestamps','open','high','low','vol','p','will','upper','middle','lower','rsi','slowk','slowd','DEMA','MA','EMA12','EMA26','MACD_macd','MACD_macdsignal','MACD_macdhist','macd']]
-            Y = df['close']
+        if(Datainfo.getfullbuymarket(minute)):
+            df = pd.read_csv(f'./datas/okex/eth/close_'+str(minute)+'M.csv')
+            X =df[['timestamps','open','high','low','vol','p','will','upper','middle','lower','rsi','slowk','slowd','DEMA','MA','EMA12','EMA26','MACD_macd','MACD_macdsignal','MACD_macdhist','close']]
+            Y = df['macd']
             X = sm.add_constant(X)
             Y = np.array(Y)
             model =  sm.OLS(Y.astype(float), X.astype(float)).fit()
@@ -66,24 +66,22 @@ class Datainfo:
             result = predictions.values[-1]
             print(result)
 
-            flag = False
-        
+            if(result > predictions.values[-2] and  result >= 8 and result < 10):
 
-            if(result > predictions.values[-2] and df['close'].values[-1] < result):
-                flag = True
-                sendtext = '获取数据完毕。。。   判断为： -->>'+str(flag)+"  close-->>"+str(df['close'].values[-1])+"  预测结果-->>"+str(result)+'   -->>我们是守护者，也是一群时刻对抗危险和疯狂的可怜虫 ！^_^'
-                Datainfo.save_finalinfo(sendtext)
-        
-            sendtext = '获取数据完毕。。。   判断为： -->>'+str(flag)+"  close-->>"+str(df['close'].values[-1])+"  预测结果-->>"+str(result)+'   -->>我们是守护者，也是一群时刻对抗危险和疯狂的可怜虫 ！^_^'
-            Datainfo.saveinfo(sendtext)
+                sendtext = '获取数据完毕。。。   判断为： -->>True-->>>  '+str(minute)+'分钟--->>>close-->>'+str(df['macd'].values[-1])+"  ,预测结果-->>"+str(result)+'   -->>我们是守护者，也是一群时刻对抗危险和疯狂的可怜虫 ！^_^'
+                Datainfo.saveinfo(sendtext)
+                return True
+            else:
+                sendtext = '获取数据完毕。。。   判断为： -->>False-->>>  '+str(minute)+'分钟--->>>close-->>'+str(df['macd'].values[-1])+"  ,预测结果-->>"+str(result)+'   -->>我们是守护者，也是一群时刻对抗危险和疯狂的可怜虫 ！^_^'
+                Datainfo.saveinfo(sendtext)
 
-            print(sendtext)
-            return flag
+                print(sendtext)
+                return False
         else:
             return False
 
 
-    def getfullbuymarket():
+    def getfullbuymarket(minute):
 
         
         Datainfo.saveinfo('开始获取是否可以买入ismarket。。。')
@@ -133,7 +131,7 @@ class Datainfo:
         }
 
         params = (
-        ('granularity', '300'),
+        ('granularity', str(int(minute*60))),
         ('size', '1000'),
         ('t', str(ttt)),
         )
@@ -154,12 +152,12 @@ class Datainfo:
         df['timestamps'] = pd.to_datetime(df['timestamps'])+pd.to_timedelta('8 hours')
         df['timestamps'] = df['timestamps'].apply(lambda x:time.mktime(time.strptime(str(x),'%Y-%m-%d %H:%M:%S')))
         #print(df['timestamps'])
-        df.to_csv(f'./datas/okex/eth/close.csv',index = False)
-        df = pd.read_csv(f'./datas/okex/eth/close.csv')
-        Datainfo.getfulldata(df)
+        df.to_csv(f'./datas/okex/eth/close_'+str(minute)+'M.csv',index = False)
+        df = pd.read_csv(f'./datas/okex/eth/close_'+str(minute)+'M.csv')
+        Datainfo.getfulldata(df,minute)
         return True
 
-    def getfulldata(df):
+    def getfulldata(df,minute):
         #获取参数历史数据
         df['will'] = ta.WILLR(df['high'].values,df['low'].values,df['close'].values,timeperiod=14)
         df['upper'], df['middle'], df['lower'] = ta.BBANDS(
@@ -202,7 +200,7 @@ class Datainfo:
                     matype=0)
 
         
-        df.fillna(0.1).to_csv(f'./datas/okex/eth/close.csv',index = False)
+        df.fillna(0.1).to_csv(f'./datas/okex/eth/close_'+str(minute)+'M.csv',index = False)
 
 
     #获取用户API信息
@@ -238,7 +236,7 @@ class Datainfo:
         f_day = f'./datas/log/day_buy.txt'
 
         with open(f_day,"a+",encoding='utf-8') as file:   #a :   写入文件，若文件不存在则会先创建再写入，但不会覆盖原文件，而是追加在文件末尾 
-            file.write('\n'+info+str(datetime.now()))
+            file.write('\n'+info+'--->>>'+str(datetime.now()))
 
 
     
@@ -257,7 +255,7 @@ class Datainfo:
         tradeAPI = Trade.TradeAPI(api_key, secret_key, passphrase, False, flag)
         # 批量下单  Place Multiple Orders
         result = tradeAPI.place_multiple_orders([
-             {'instId': 'ETH-USD-SWAP', 'tdMode': 'cross', 'side': 'buy', 'ordType': 'market', 'sz': '1',
+             {'instId': 'ETH-USD-SWAP', 'tdMode': 'cross', 'side': 'buy', 'ordType': 'market', 'sz': '5',
               'posSide': 'long',
               'clOrdId': 'a12344', 'tag': 'test1210'},
     
@@ -277,11 +275,11 @@ class Datainfo:
 
         # 策略委托下单  Place Algo Order
         result = tradeAPI.place_algo_order('ETH-USD-SWAP', 'cross', 'sell', ordType='conditional',
-                                            sz='1',posSide='long', tpTriggerPx=str(float(lastprice)+30), tpOrdPx=str(float(lastprice)+30))
-        Datainfo.saveinfo('设置止盈完毕。。。'+str(float(lastprice)+30))
+                                            sz='5',posSide='long', tpTriggerPx=str(float(lastprice)+30), tpOrdPx=str(float(lastprice)+20))
+        Datainfo.saveinfo('设置止盈完毕。。。'+str(float(lastprice)+20))
 
 
-        sendtext = '100倍杠杆，全仓委托：ETH-USD-SWAP -->> 1笔，价格是'+str(lastprice)+'，设置止盈完毕。。。'+str(float(lastprice)+30)
+        sendtext = '100倍杠杆，全仓委托：ETH-USD-SWAP -->> 5笔，价格是'+str(lastprice)+'，设置止盈完毕。。。'+str(float(lastprice)+20)
         Datainfo.save_finalinfo('我们是守护者，也是一群时刻对抗危险和疯狂的可怜虫 ！^_^     -->>'+sendtext)
         SendDingding.sender(sendtext)
 
@@ -466,14 +464,17 @@ class Datainfo:
 
             time.sleep(15)
 
-            isbuy  =  Datainfo.isbuy()
+            isbuy_5M  =  Datainfo.isbuy(5)
+            #isbuy_15M  =  Datainfo.isbuy(15)
+            #isbuy_60M  =  Datainfo.isbuy(60)
 
-            if(isbuy):
+            if(not (isbuy_5M)):
                 Datainfo.saveinfo('预测不买入。。。')
                 return
 
-            if(isbuy):
+            if(isbuy_5M):
                 Datainfo.saveinfo('预测买入。。。')
+                Datainfo.save_finalinfo('预测买入。。。')
                 api_key, secret_key, passphrase, flag = Datainfo.get_userinfo()
                 Datainfo.orderbuy(api_key, secret_key, passphrase, flag)
 
