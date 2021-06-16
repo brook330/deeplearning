@@ -56,23 +56,24 @@ class Datainfo:
         
 
         if(Datainfo.getfullbuymarket(minute)):
+
             df = pd.read_csv(f'./datas/okex/eth/close_'+str(minute)+'M.csv')
-            X =df[['timestamps','open','high','low','vol','p','will','upper','middle','lower','rsi','slowk','slowd','DEMA','MA','EMA12','EMA26','MACD_macd','MACD_macdsignal','MACD_macdhist','close']]
-            Y = df['macd']
-            X = sm.add_constant(X)
-            Y = np.array(Y)
-            model =  sm.OLS(Y.astype(float), X.astype(float)).fit()
-            predictions = model.predict(X)
-            result = predictions.values[-1]
-            print(result)
+ 
+            
+            X = df['close'].values[-1] > df['open'].values[-1] and df['upper'].values[-1] -  df['middle'].values[-1] < 130 and df['macd'].values[-1] > df['macd'].values[-2] and df['macd'].values[-2] > df['macd'].values[-3] and df['close'].values[-1] and df['close'].values[-1] > df['middle'].values[-1] and df['close5'].values[-1] > df['close35'].values[-1] and df['close5'].values[-2] < df['close35'].values[-2] and df['vol5'].values[-1] > df['vol35'].values[-1] and df['vol35'].values[-1] > df['vol135'].values[-1] and df['vol5'].values[-1] > df['vol135'].values[-1]
 
-            if(result > predictions.values[-2] and  result >= 8 and result < 10):
+            Y = df['close'].values[-1] > df['open'].values[-1] and df['upper'].values[-1] -  df['middle'].values[-1] < 130 and df['macd'].values[-1] > df['macd'].values[-2] +8 and df['macd'].values[-1] > df['macd'].values[-2] and df['macd'].values[-2] > df['macd'].values[-3] and df['close'].values[-1] and df['close'].values[-1] > df['middle'].values[-1] and df['close5'].values[-1] > df['close35'].values[-1] and df['close5'].values[-2] < df['close35'].values[-2] and df['vol5'].values[-1] > df['vol35'].values[-1] and df['vol35'].values[-1] > df['vol135'].values[-1] and df['vol5'].values[-1] > df['vol135'].values[-1]
 
-                sendtext = '获取数据完毕。。。   判断为： -->>True-->>>  '+str(minute)+'分钟--->>>close-->>'+str(df['macd'].values[-1])+"  ,预测结果-->>"+str(result)+'   -->>我们是守护者，也是一群时刻对抗危险和疯狂的可怜虫 ！^_^'
+            Z = df['close'].values[-1] > df['open'].values[-1] and df['upper'].values[-1] -  df['middle'].values[-1] > 150 and df['upper'].values[-1] -  df['middle'].values[-1] < 220  and df['macd'].values[-1] > df['macd'].values[-2] +8 and df['macd'].values[-1] > df['macd'].values[-2] and df['macd'].values[-2] > df['macd'].values[-3] and df['close'].values[-1] and df['close'].values[-1] > df['middle'].values[-1] and df['close5'].values[-1] > df['close35'].values[-1] and df['close5'].values[-2] < df['close35'].values[-2] and df['vol5'].values[-1] > df['vol35'].values[-1] and df['vol35'].values[-1] > df['vol135'].values[-1] and df['vol5'].values[-1] > df['vol135'].values[-1]
+
+
+            if(X or Y or Z):
+
+                sendtext = '获取数据完毕。。。   判断为： -->>True-->>>  '+str(minute)+'分钟--->>>close-->>'+str(df['close'].values[-1])+'  ,预测结果-->>正确   -->>我们是守护者，也是一群时刻对抗危险和疯狂的可怜虫 ！^_^'
                 Datainfo.saveinfo(sendtext)
                 return True
             else:
-                sendtext = '获取数据完毕。。。   判断为： -->>False-->>>  '+str(minute)+'分钟--->>>close-->>'+str(df['macd'].values[-1])+"  ,预测结果-->>"+str(result)+'   -->>我们是守护者，也是一群时刻对抗危险和疯狂的可怜虫 ！^_^'
+                sendtext = '获取数据完毕。。。   判断为： -->>False-->>>  '+str(minute)+'分钟--->>>close-->>'+str(df['close'].values[-1])+'  ,预测结果-->>错误   -->>我们是守护者，也是一群时刻对抗危险和疯狂的可怜虫 ！^_^'
                 Datainfo.saveinfo(sendtext)
 
                 print(sendtext)
@@ -131,7 +132,7 @@ class Datainfo:
         }
 
         params = (
-        ('granularity', str(int(minute*60))),
+        ('granularity', str(int(minute)*60)),
         ('size', '1000'),
         ('t', str(ttt)),
         )
@@ -144,14 +145,15 @@ class Datainfo:
                 s.cookies.update(c)#更新s的cookie
                 s.get(url = 'https://www.okex.com/v2/perpetual/pc/public/instruments/ETH-USD-SWAP/candles?granularity=900&size=1000&t='+str(ttt))
         df = pd.DataFrame(eval(json.dumps(response.json()))['data'])
+        print(df)
         df.columns = ['timestamps','open','high','low','close','vol','p']
         datelist = []
         for timestamp in df['timestamps']:
             datelist.append(timestamp.split('.000Z')[0].replace('T',' '))
         df['timestamps'] = datelist
         df['timestamps'] = pd.to_datetime(df['timestamps'])+pd.to_timedelta('8 hours')
-        df['timestamps'] = df['timestamps'].apply(lambda x:time.mktime(time.strptime(str(x),'%Y-%m-%d %H:%M:%S')))
-        #print(df['timestamps'])
+        #df['timestamps'] = df['timestamps'].apply(lambda x:time.mktime(time.strptime(str(x),'%Y-%m-%d %H:%M:%S')))
+        df['vol'] = list(map(float, df['vol'].values))
         df.to_csv(f'./datas/okex/eth/close_'+str(minute)+'M.csv',index = False)
         df = pd.read_csv(f'./datas/okex/eth/close_'+str(minute)+'M.csv')
         Datainfo.getfulldata(df,minute)
@@ -185,9 +187,15 @@ class Datainfo:
         # real = MA(close, timeperiod=30, matype=0)
         df["MA"] = ta.MA(df['close'].values, timeperiod=30, matype=0)
         # EMA和MACD
-        # 调用talib计算6日指数移动平均线的值
-        df['EMA12'] = ta.EMA(np.array(df['close'].values), timeperiod=6)
-        df['EMA26'] = ta.EMA(np.array(df['close'].values), timeperiod=12)
+        # 调用talib计算5\35\135日指数移动平均线的值
+        df['close5'] = ta.EMA(np.array(df['close'].values), timeperiod=5)
+        df['close35'] = ta.EMA(np.array(df['close'].values), timeperiod=35)
+        df['close135'] = ta.EMA(np.array(df['close'].values), timeperiod=135)
+
+        df['vol5'] = ta.EMA(np.array(df['vol'].values), timeperiod=5)
+        df['vol35'] = ta.EMA(np.array(df['vol'].values), timeperiod=35)
+        df['vol135'] = ta.EMA(np.array(df['vol'].values), timeperiod=135)
+
         df["MACD_macd"],df["MACD_macdsignal"],df["MACD_macdhist"] = ta.MACD(df['close'].values, fastperiod=12, slowperiod=26, signalperiod=60)
         df['macd'] = 2*(df["MACD_macd"]-df["MACD_macdsignal"])
         df['upper'], df['middle'], df['lower'] = ta.BBANDS(
@@ -249,13 +257,13 @@ class Datainfo:
         # 设置持仓模式  Set Position mode
         result = accountAPI.get_position_mode('long_short_mode')
         # 设置杠杆倍数  Set Leverage
-        result = accountAPI.set_leverage(instId='ETH-USD-SWAP', lever='100', mgnMode='cross')
-        Datainfo.saveinfo('设置100倍保证金杠杆完毕。。。')
+        result = accountAPI.set_leverage(instId='ETH-USD-SWAP', lever='50', mgnMode='cross')
+        Datainfo.saveinfo('设置50倍保证金杠杆完毕。。。')
         # trade api
         tradeAPI = Trade.TradeAPI(api_key, secret_key, passphrase, False, flag)
         # 批量下单  Place Multiple Orders
         result = tradeAPI.place_multiple_orders([
-             {'instId': 'ETH-USD-SWAP', 'tdMode': 'cross', 'side': 'buy', 'ordType': 'market', 'sz': '5',
+             {'instId': 'ETH-USD-SWAP', 'tdMode': 'cross', 'side': 'buy', 'ordType': 'market', 'sz': '2',
               'posSide': 'long',
               'clOrdId': 'a12344', 'tag': 'test1210'},
     
@@ -275,11 +283,11 @@ class Datainfo:
 
         # 策略委托下单  Place Algo Order
         result = tradeAPI.place_algo_order('ETH-USD-SWAP', 'cross', 'sell', ordType='conditional',
-                                            sz='5',posSide='long', tpTriggerPx=str(float(lastprice)+30), tpOrdPx=str(float(lastprice)+20))
-        Datainfo.saveinfo('设置止盈完毕。。。'+str(float(lastprice)+20))
+                                            sz='2',posSide='long', tpTriggerPx=str(float(lastprice)+50), tpOrdPx=str(float(lastprice)+50))
+        Datainfo.saveinfo('设置止盈完毕。。。'+str(float(lastprice)+50))
 
 
-        sendtext = '100倍杠杆，全仓委托：ETH-USD-SWAP -->> 5笔，价格是'+str(lastprice)+'，设置止盈完毕。。。'+str(float(lastprice)+20)
+        sendtext = '100倍杠杆，全仓委托：ETH-USD-SWAP -->> 2笔，价格是'+str(lastprice)+'，设置止盈完毕。。。'+str(float(lastprice)+50)
         Datainfo.save_finalinfo('我们是守护者，也是一群时刻对抗危险和疯狂的可怜虫 ！^_^     -->>'+sendtext)
         SendDingding.sender(sendtext)
 
@@ -305,12 +313,24 @@ class Datainfo:
             #声明2线程保存数据
             p1 = multiprocessing.Process(target = sch.showwindows)
             p2 = multiprocessing.Process(target = sch.okex5M_buy)
-            
+            p3 = multiprocessing.Process(target = sch.okex15M_buy)
+            p4 = multiprocessing.Process(target = sch.okex30M_buy)
+            p5 = multiprocessing.Process(target = sch.okex60M_buy)
+            p6 = multiprocessing.Process(target = sch.okex1M_buy)
 
-            #2个进程开始运行
+            #6个进程开始运行
             p2.start()
+            p3.start()
+            p4.start()
+            p5.start()
+            p6.start()
             p1.start()
+
             p2.join()
+            p3.join()
+            p4.join()
+            p5.join()
+            p6.join()
             p1.join()
             
             
@@ -450,29 +470,70 @@ class Datainfo:
             sys.exit(app.exec_()) # 使用exit()或者点击关闭按钮退出QApp
 
 
-        def okex5M_buy(self):
+        def okex1M_buy(self):
 
             scheduler = BlockingScheduler()
-            scheduler.add_job((self.getdatainfo), 'cron', minute='*/5')
+            scheduler.add_job((self.getdatainfo), 'cron', args = ['1'], minute='*/1')
             print(scheduler.get_jobs())
             try:
                 scheduler.start()
             except KeyboardInterrupt:
                 scheduler.shutdown()
+
+        def okex5M_buy(self):
+
+            scheduler = BlockingScheduler()
+            scheduler.add_job((self.getdatainfo), 'cron', args = ['5'], minute='*/5')
+            print(scheduler.get_jobs())
+            try:
+                scheduler.start()
+            except KeyboardInterrupt:
+                scheduler.shutdown()
+
+        def okex15M_buy(self):
+
+            scheduler = BlockingScheduler()
+            scheduler.add_job((self.getdatainfo), 'cron', args = ['15'], minute='*/15')
+            print(scheduler.get_jobs())
+            try:
+                scheduler.start()
+            except KeyboardInterrupt:
+                scheduler.shutdown()
+
+        def okex30M_buy(self):
+
+            scheduler = BlockingScheduler()
+            scheduler.add_job((self.getdatainfo), 'cron', args = ['30'],minute='*/30')
+            print(scheduler.get_jobs())
+            try:
+                scheduler.start()
+            except KeyboardInterrupt:
+                scheduler.shutdown()
+
+        def okex60M_buy(self):
+
+            scheduler = BlockingScheduler()
+            scheduler.add_job((self.getdatainfo), 'cron', args = ['60'], hour='*/1')
+            print(scheduler.get_jobs())
+            try:
+                scheduler.start()
+            except KeyboardInterrupt:
+                scheduler.shutdown()
+
+
         
-        def getdatainfo(self):
+        def getdatainfo(self,minute):
 
-            time.sleep(15)
+            #time.sleep(15)
 
-            isbuy_5M  =  Datainfo.isbuy(5)
-            #isbuy_15M  =  Datainfo.isbuy(15)
-            #isbuy_60M  =  Datainfo.isbuy(60)
+            print(minute)
+            isbuy  =  Datainfo.isbuy(minute)
 
-            if(not (isbuy_5M)):
+            if(not (isbuy)):
                 Datainfo.saveinfo('预测不买入。。。')
                 return
 
-            if(isbuy_5M):
+            if(isbuy):
                 Datainfo.saveinfo('预测买入。。。')
                 Datainfo.save_finalinfo('预测买入。。。')
                 api_key, secret_key, passphrase, flag = Datainfo.get_userinfo()
