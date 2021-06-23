@@ -51,57 +51,33 @@ class DateEncoder(json.JSONEncoder):
 
 class Datainfo:
 
+
+
     def isbuy(minute):
-
-        
-
-        if(Datainfo.getfullbuymarket(minute)):
-
-            df = pd.read_csv(f'./datas/okex/eth/close_'+str(minute)+'M.csv')
- 
-            
-            X = df['close'].values[-1] > df['open'].values[-1] and df['upper'].values[-1] -  df['middle'].values[-1] < 130 and df['macd'].values[-1] > df['macd'].values[-2] and df['macd'].values[-2] > df['macd'].values[-3] and df['close'].values[-1] and df['close'].values[-1] > df['middle'].values[-1] and df['close5'].values[-1] > df['close35'].values[-1] and df['close5'].values[-2] < df['close35'].values[-2] and df['vol5'].values[-1] > df['vol35'].values[-1] and df['vol35'].values[-1] > df['vol135'].values[-1] and df['vol5'].values[-1] > df['vol135'].values[-1]
-
-            Y = df['close'].values[-1] > df['open'].values[-1] and df['upper'].values[-1] -  df['middle'].values[-1] < 130 and df['macd'].values[-1] > df['macd'].values[-2] +8 and df['macd'].values[-1] > df['macd'].values[-2] and df['macd'].values[-2] > df['macd'].values[-3] and df['close'].values[-1] and df['close'].values[-1] > df['middle'].values[-1] and df['close5'].values[-1] > df['close35'].values[-1] and df['close5'].values[-2] < df['close35'].values[-2] and df['vol5'].values[-1] > df['vol35'].values[-1] and df['vol35'].values[-1] > df['vol135'].values[-1] and df['vol5'].values[-1] > df['vol135'].values[-1]
-
-            Z = df['close'].values[-1] > df['open'].values[-1] and df['upper'].values[-1] -  df['middle'].values[-1] > 150 and df['upper'].values[-1] -  df['middle'].values[-1] < 220  and df['macd'].values[-1] > df['macd'].values[-2] +8 and df['macd'].values[-1] > df['macd'].values[-2] and df['macd'].values[-2] > df['macd'].values[-3] and df['close'].values[-1] and df['close'].values[-1] > df['middle'].values[-1] and df['close5'].values[-1] > df['close35'].values[-1] and df['close5'].values[-2] < df['close35'].values[-2] and df['vol5'].values[-1] > df['vol35'].values[-1] and df['vol35'].values[-1] > df['vol135'].values[-1] and df['vol5'].values[-1] > df['vol135'].values[-1]
-
-
-            if(X or Y or Z):
-
-                sendtext = '获取数据完毕。。。   判断为： -->>True-->>>  '+str(minute)+'分钟--->>>close-->>'+str(df['close'].values[-1])+'  ,预测结果-->>正确   -->>我们是守护者，也是一群时刻对抗危险和疯狂的可怜虫 ！^_^'
-                Datainfo.saveinfo(sendtext)
-                return True
-            else:
-                sendtext = '获取数据完毕。。。   判断为： -->>False-->>>  '+str(minute)+'分钟--->>>close-->>'+str(df['close'].values[-1])+'  ,预测结果-->>错误   -->>我们是守护者，也是一群时刻对抗危险和疯狂的可怜虫 ！^_^'
-                Datainfo.saveinfo(sendtext)
-
-                print(sendtext)
-                return False
-        else:
-            return False
-
-
-    def getfullbuymarket(minute):
 
         
         Datainfo.saveinfo('开始获取是否可以买入ismarket。。。')
 
         api_key,secret_key,passphrase,flag = Datainfo.get_userinfo()
 
-        #判断订单是否大于15单，大于则不买入
+        #判断订单是否大于5单，大于则不买入
         #trade api
         tradeAPI = Trade.TradeAPI(api_key, secret_key, passphrase, False, flag)
         list_string_buy = ['buy']
         list_string_sell = ['sell']
-        list_text = list(pd.DataFrame(eval(str(tradeAPI.get_fills()))['data'])['side'].head(30).values)
+        list_text = list(pd.DataFrame(eval(str(tradeAPI.get_fills()))['data'])['side'].head(100).values)
         all_words_buy = list(filter(lambda text: all([word in text for word in list_string_buy]), list_text ))
         all_words_sell = list(filter(lambda text: all([word in text for word in list_string_sell]), list_text ))
         Datainfo.saveinfo('总计：--->>>'+str(len(all_words_buy) - len(all_words_sell))+' 单 。。。>>>')
-        
+        print('总计：--->>>',len(all_words_buy) - len(all_words_sell),' 单 。。。>>>')
         if(len(all_words_buy) - len(all_words_sell)>15):
-            Datainfo.saveinfo('大于15单返回。。。>>>')
-            return False
+            Datainfo.saveinfo('买单大于15单返回。。。>>>')
+            
+            return '15单'
+
+        if(len(all_words_buy) < len(all_words_sell)):
+            Datainfo.saveinfo('买单小于卖单返回。。。>>>')
+            return '买单小于卖单'
 
         t = time.time()
 
@@ -112,6 +88,53 @@ class Datainfo:
         tt = str((int(t * 1000)))
         ttt = str(int(round(t * 1000)))
 
+        #=====获取vol数据
+        headers = {
+            'authority': 'www.okex.com',
+            'sec-ch-ua': '^\\^',
+            'timeout': '10000',
+            'x-cdn': 'https://static.okex.com',
+            'devid': '7f1dea77-90cd-4746-a13f-a98bac4a333b',
+            'accept-language': 'zh-CN',
+            'sec-ch-ua-mobile': '?0',
+            'user-agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.77 Safari/537.36',
+            'accept': 'application/json',
+            'x-utc': '8',
+            'app-type': 'web',
+            'sec-fetch-site': 'same-origin',
+            'sec-fetch-mode': 'cors',
+            'sec-fetch-dest': 'empty',
+            'referer': 'https://www.okex.com/markets/swap-data/eth-usd',
+            'cookie': '_gcl_au=1.1.1849415495.'+str(tt)+'; _ga=GA1.2.1506507962.'+str(tt)+'; first_ref=https^%^3A^%^2F^%^2Fwww.okex.com^%^2Fcaptcha^%^3Fto^%^3DaHR0cHM6Ly93d3cub2tleC5jb20vbWFya2V0cy9zd2FwLWRhdGEvZXRoLXVzZA^%^3D^%^3D; locale=zh_CN; _gid=GA1.2.802198982.'+str(tt)+'; amp_56bf9d=gqC_GMDGl4q5Tk-BJhT-oP...1f8fiso4n.1f8fiu841.1.2.3',
+        }
+
+        params = (
+            ('t', str(ttt)),
+            ('unitType', '0'),
+        )
+
+        response = r.get('https://www.okex.com/v3/futures/pc/market/takerTradeVolume/ETH', headers=headers, params=params)
+
+        if response.cookies.get_dict(): #保持cookie有效 
+                s=r.session()
+                c = r.cookies.RequestsCookieJar()#定义一个cookie对象
+                c.set('cookie-name', 'cookie-value')#增加cookie的值
+                s.cookies.update(c)#更新s的cookie
+                s.get(url = 'https://www.okex.com/v3/futures/pc/market/takerTradeVolume/ETH?t='+str(ttt)+'&unitType=0')
+        df = pd.DataFrame(response.json()['data'])
+        df.to_csv(f'./datas/okex/eth.csv',index=False)
+        df = pd.read_csv(f'./datas/okex/eth.csv')
+        df['timestamps'] = pd.to_datetime(df['timestamps'],unit='ms')+pd.to_timedelta('8 hours')
+        buyVolumes = df['buyVolumes'].tail(30).values
+        sellVolumes = df['sellVolumes'].tail(30).values
+
+        buyVolumes10 = df['buyVolumes'].tail(10).values
+        sellVolumes10 = df['sellVolumes'].tail(10).values
+
+        print(df)
+        print(str(datetime.now())+'--->>>计算结果--->>>',(sum(buyVolumes)/len(buyVolumes)) / (sum(sellVolumes)/len(sellVolumes)))
+
+        #===获取close数据
         headers = {
         'authority': 'www.okex.com',
         'sec-ch-ua': '^\\^',
@@ -144,22 +167,42 @@ class Datainfo:
                 c.set('cookie-name', 'cookie-value')#增加cookie的值
                 s.cookies.update(c)#更新s的cookie
                 s.get(url = 'https://www.okex.com/v2/perpetual/pc/public/instruments/ETH-USD-SWAP/candles?granularity=900&size=1000&t='+str(ttt))
-        df = pd.DataFrame(eval(json.dumps(response.json()))['data'])
-        print(df)
-        df.columns = ['timestamps','open','high','low','close','vol','p']
+        dw = pd.DataFrame(eval(json.dumps(response.json()))['data'])
+        #print(df)
+        dw.columns = ['timestamps','open','high','low','close','vol','p']
         datelist = []
-        for timestamp in df['timestamps']:
+        for timestamp in dw['timestamps']:
             datelist.append(timestamp.split('.000Z')[0].replace('T',' '))
-        df['timestamps'] = datelist
-        df['timestamps'] = pd.to_datetime(df['timestamps'])+pd.to_timedelta('8 hours')
+        dw['timestamps'] = datelist
+        dw['timestamps'] = pd.to_datetime(dw['timestamps'])+pd.to_timedelta('8 hours')
         #df['timestamps'] = df['timestamps'].apply(lambda x:time.mktime(time.strptime(str(x),'%Y-%m-%d %H:%M:%S')))
-        df['vol'] = list(map(float, df['vol'].values))
-        df.to_csv(f'./datas/okex/eth/close_'+str(minute)+'M.csv',index = False)
-        df = pd.read_csv(f'./datas/okex/eth/close_'+str(minute)+'M.csv')
-        Datainfo.getfulldata(df,minute)
-        return True
+        #print(dw)
+        dw['vol'] = list(map(float, dw['vol'].values))
+        dw.to_csv(f'./datas/okex/eth/close.csv',index = False)
+        dw = pd.read_csv(f'./datas/okex/eth/close.csv')
+        Datainfo.getfulldata(dw)
+        dw = pd.read_csv(f'./datas/okex/eth/close.csv')
+        #===判断是否买入或者卖出
+        print('(sum(buyVolumes10)/len(buyVolumes10)) /(sum(sellVolumes10)/len(sellVolumes10))  -->>',(sum(buyVolumes10)/len(buyVolumes10)) /(sum(sellVolumes10)/len(sellVolumes10))  )
+        print('obv-->>',dw['obv'].tail(1).values ,'MA_obv-->>', dw['maobv'].tail(1).values)
+        if((sum(buyVolumes)/len(buyVolumes)) /(sum(sellVolumes)/len(sellVolumes)) > 1.01 and (sum(buyVolumes10)/len(buyVolumes10)) /(sum(sellVolumes10)/len(sellVolumes10)) > 1.02 and dw['obv'].tail(1).values > dw['maobv'].tail(1).values):
+            print('买入')
+            sendtext = '获取数据完毕。。。   判断为： -->>True-->>>  '+str(minute)+'分钟--->>>buyVolumes-->>'+str(df['buyVolumes'].values[-1])+'--->>>sellVolumes-->>'+str(df['sellVolumes'].values[-1])+'  ,预测结果-->>正确   -->>我们是守护者，也是一群时刻对抗危险和疯狂的可怜虫 ！^_^'
+            Datainfo.saveinfo(sendtext)
+            return '买入'
+        elif((sum(buyVolumes)/len(buyVolumes)) /(sum(sellVolumes)/len(sellVolumes)) < 0.99 and (sum(buyVolumes10)/len(buyVolumes10)) /(sum(sellVolumes10)/len(sellVolumes10)) < 0.97 and dw['obv'].tail(1).values < dw['maobv'].tail(1).values):
+            print('卖出')
+            sendtext = '获取数据完毕。。。   判断为： -->>True-->>>  '+str(minute)+'分钟--->>>buyVolumes-->>'+str(df['buyVolumes'].values[-1])+'--->>>sellVolumes-->>'+str(df['sellVolumes'].values[-1])+'  ,预测结果-->>正确   -->>我们是守护者，也是一群时刻对抗危险和疯狂的可怜虫 ！^_^'
+            Datainfo.saveinfo(sendtext)
+            return '卖出'
+        else:
+            print('不买卖')
+            return '不买卖'
 
-    def getfulldata(df,minute):
+
+    def getfulldata(df):
+
+
         #获取参数历史数据
         df['will'] = ta.WILLR(df['high'].values,df['low'].values,df['close'].values,timeperiod=14)
         df['upper'], df['middle'], df['lower'] = ta.BBANDS(
@@ -187,15 +230,8 @@ class Datainfo:
         # real = MA(close, timeperiod=30, matype=0)
         df["MA"] = ta.MA(df['close'].values, timeperiod=30, matype=0)
         # EMA和MACD
-        # 调用talib计算5\35\135日指数移动平均线的值
-        df['close5'] = ta.EMA(np.array(df['close'].values), timeperiod=5)
-        df['close35'] = ta.EMA(np.array(df['close'].values), timeperiod=35)
-        df['close135'] = ta.EMA(np.array(df['close'].values), timeperiod=135)
-
-        df['vol5'] = ta.EMA(np.array(df['vol'].values), timeperiod=5)
-        df['vol35'] = ta.EMA(np.array(df['vol'].values), timeperiod=35)
-        df['vol135'] = ta.EMA(np.array(df['vol'].values), timeperiod=135)
-
+        df['obv'] = ta.OBV(df['close'].values,df['vol'].values)
+        df['maobv'] = ta.MA(df['obv'].values, timeperiod=30, matype=0)
         df["MACD_macd"],df["MACD_macdsignal"],df["MACD_macdhist"] = ta.MACD(df['close'].values, fastperiod=12, slowperiod=26, signalperiod=60)
         df['macd'] = 2*(df["MACD_macd"]-df["MACD_macdsignal"])
         df['upper'], df['middle'], df['lower'] = ta.BBANDS(
@@ -206,10 +242,7 @@ class Datainfo:
                     nbdevdn=2,
                     # Moving average type: simple moving average here
                     matype=0)
-
-        
-        df.fillna(0.1).to_csv(f'./datas/okex/eth/close_'+str(minute)+'M.csv',index = False)
-
+        df.to_csv(f'./datas/okex/eth/close.csv',index = False)
 
     #获取用户API信息
     def get_userinfo():
@@ -257,10 +290,11 @@ class Datainfo:
         # 设置持仓模式  Set Position mode
         result = accountAPI.get_position_mode('long_short_mode')
         # 设置杠杆倍数  Set Leverage
-        result = accountAPI.set_leverage(instId='ETH-USD-SWAP', lever='50', mgnMode='cross')
-        Datainfo.saveinfo('设置50倍保证金杠杆完毕。。。')
+        result = accountAPI.set_leverage(instId='ETH-USD-SWAP', lever='100', mgnMode='cross')
+        #Datainfo.saveinfo('设置100倍保证金杠杆完毕。。。')
         # trade api
         tradeAPI = Trade.TradeAPI(api_key, secret_key, passphrase, False, flag)
+        # 批量下单  Place Multiple Orders
         # 批量下单  Place Multiple Orders
         result = tradeAPI.place_multiple_orders([
              {'instId': 'ETH-USD-SWAP', 'tdMode': 'cross', 'side': 'buy', 'ordType': 'market', 'sz': '2',
@@ -271,24 +305,62 @@ class Datainfo:
          ])
         print(result)
 
-        Datainfo.saveinfo('下单完毕。。。')
+        #Datainfo.saveinfo('下单完毕。。。')
 
         lastprice = Datainfo.getlastprice(api_key, secret_key, passphrase, flag)
 
-        Datainfo.saveinfo('获取最新价格。。。'+str(lastprice))
+        #Datainfo.saveinfo('获取最新价格。。。'+str(lastprice))
         
         # 调整保证金  Increase/Decrease margint
         result = accountAPI.Adjustment_margin('ETH-USD-SWAP', 'short', 'add', '5')
-        Datainfo.saveinfo('调整保证金完毕。。。')
+        #Datainfo.saveinfo('调整保证金完毕。。。')
 
         # 策略委托下单  Place Algo Order
         result = tradeAPI.place_algo_order('ETH-USD-SWAP', 'cross', 'sell', ordType='conditional',
-                                            sz='2',posSide='long', tpTriggerPx=str(float(lastprice)+50), tpOrdPx=str(float(lastprice)+50))
-        Datainfo.saveinfo('设置止盈完毕。。。'+str(float(lastprice)+50))
+                                            sz='1',posSide='long', tpTriggerPx=str(float(lastprice)+18), tpOrdPx=str(float(lastprice)+18))
+        #Datainfo.saveinfo(str(datetime.now())+'设置止盈完毕。。。'+str(float(lastprice)+18))
 
 
-        sendtext = '100倍杠杆，全仓委托：ETH-USD-SWAP -->> 2笔，价格是'+str(lastprice)+'，设置止盈完毕。。。'+str(float(lastprice)+50)
-        Datainfo.save_finalinfo('我们是守护者，也是一群时刻对抗危险和疯狂的可怜虫 ！^_^     -->>'+sendtext)
+        sendtext = str(datetime.now())+'--->>>100倍杠杆，全仓委托：买入ETH-USD-SWAP -->> 1笔，价格是'+str(lastprice)+'，设置止盈完毕。。。'+str(float(lastprice)+18)
+        Datainfo.save_finalinfo(str(datetime.now())+'--->>>我们是守护者，也是一群时刻对抗危险和疯狂的可怜虫 ！^_^     -->>'+sendtext)
+        SendDingding.sender(sendtext)
+
+    #设置自动下单
+    def ordersell(api_key, secret_key, passphrase, flag):
+
+        # account api
+        accountAPI = Account.AccountAPI(api_key, secret_key, passphrase, False, flag)
+        
+        # 设置持仓模式  Set Position mode
+        result = accountAPI.get_position_mode('long_short_mode')
+        # 设置杠杆倍数  Set Leverage
+        result = accountAPI.set_leverage(instId='ETH-USD-SWAP', lever='100', mgnMode='cross')
+        #Datainfo.saveinfo('设置100倍保证金杠杆完毕。。。')
+        # trade api
+        tradeAPI = Trade.TradeAPI(api_key, secret_key, passphrase, False, flag)
+        # 批量下单  Place Multiple Orders
+        result = tradeAPI.place_order(instId='ETH-USD-SWAP', tdMode='cross', side='sell', posSide='short',
+                              ordType='market', sz='1')
+        print(result)
+
+        #Datainfo.saveinfo('下单完毕。。。')
+
+        lastprice = Datainfo.getlastprice(api_key, secret_key, passphrase, flag)
+
+        #Datainfo.saveinfo('获取最新价格。。。'+str(lastprice))
+        
+        # 调整保证金  Increase/Decrease margint
+        result = accountAPI.Adjustment_margin('ETH-USD-SWAP', 'short', 'add', '5')
+        #Datainfo.saveinfo('调整保证金完毕。。。')
+
+        # 策略委托下单  Place Algo Order
+        result = tradeAPI.place_algo_order('ETH-USD-SWAP', 'cross', 'buy', ordType='conditional',
+                                            sz='1',posSide='short', tpTriggerPx=str(float(lastprice)-18), tpOrdPx=str(float(lastprice)-18))
+        #Datainfo.saveinfo(str(datetime.now)+'设置止盈完毕。。。'+str(float(lastprice)-18))
+
+
+        sendtext = str(datetime.now())+'--->>>卖出100倍杠杆，全仓委托：ETH-USD-SWAP -->> 1笔，价格是'+str(lastprice)+'，设置止盈完毕。。。'+str(float(lastprice)-18)
+        Datainfo.save_finalinfo(str(datetime.now())+'--->>>我们是守护者，也是一群时刻对抗危险和疯狂的可怜虫 ！^_^     -->>'+sendtext)
         SendDingding.sender(sendtext)
 
     #查询最新价格
@@ -313,24 +385,13 @@ class Datainfo:
             #声明2线程保存数据
             p1 = multiprocessing.Process(target = sch.showwindows)
             p2 = multiprocessing.Process(target = sch.okex5M_buy)
-            p3 = multiprocessing.Process(target = sch.okex15M_buy)
-            p4 = multiprocessing.Process(target = sch.okex30M_buy)
-            p5 = multiprocessing.Process(target = sch.okex60M_buy)
-            p6 = multiprocessing.Process(target = sch.okex1M_buy)
+
 
             #6个进程开始运行
             p2.start()
-            p3.start()
-            p4.start()
-            p5.start()
-            p6.start()
             p1.start()
 
             p2.join()
-            p3.join()
-            p4.join()
-            p5.join()
-            p6.join()
             p1.join()
             
             
@@ -470,15 +531,6 @@ class Datainfo:
             sys.exit(app.exec_()) # 使用exit()或者点击关闭按钮退出QApp
 
 
-        def okex1M_buy(self):
-
-            scheduler = BlockingScheduler()
-            scheduler.add_job((self.getdatainfo), 'cron', args = ['1'], minute='*/1')
-            print(scheduler.get_jobs())
-            try:
-                scheduler.start()
-            except KeyboardInterrupt:
-                scheduler.shutdown()
 
         def okex5M_buy(self):
 
@@ -490,54 +542,27 @@ class Datainfo:
             except KeyboardInterrupt:
                 scheduler.shutdown()
 
-        def okex15M_buy(self):
-
-            scheduler = BlockingScheduler()
-            scheduler.add_job((self.getdatainfo), 'cron', args = ['15'], minute='*/15')
-            print(scheduler.get_jobs())
-            try:
-                scheduler.start()
-            except KeyboardInterrupt:
-                scheduler.shutdown()
-
-        def okex30M_buy(self):
-
-            scheduler = BlockingScheduler()
-            scheduler.add_job((self.getdatainfo), 'cron', args = ['30'],minute='*/30')
-            print(scheduler.get_jobs())
-            try:
-                scheduler.start()
-            except KeyboardInterrupt:
-                scheduler.shutdown()
-
-        def okex60M_buy(self):
-
-            scheduler = BlockingScheduler()
-            scheduler.add_job((self.getdatainfo), 'cron', args = ['60'], hour='*/1')
-            print(scheduler.get_jobs())
-            try:
-                scheduler.start()
-            except KeyboardInterrupt:
-                scheduler.shutdown()
-
-
         
         def getdatainfo(self,minute):
 
-            #time.sleep(15)
-
+            time.sleep(8)
+            
             print(minute)
             isbuy  =  Datainfo.isbuy(minute)
 
-            if(not (isbuy)):
+            if('15单' == isbuy or '买单小于卖单'== isbuy):
                 Datainfo.saveinfo('预测不买入。。。')
                 return
-
-            if(isbuy):
-                Datainfo.saveinfo('预测买入。。。')
-                Datainfo.save_finalinfo('预测买入。。。')
+            elif('买入' == isbuy):
                 api_key, secret_key, passphrase, flag = Datainfo.get_userinfo()
                 Datainfo.orderbuy(api_key, secret_key, passphrase, flag)
+            elif('卖出' == isbuy):
+                api_key, secret_key, passphrase, flag = Datainfo.get_userinfo()
+                Datainfo.ordersell(api_key, secret_key, passphrase, flag)
+            elif('不买卖' == isbuy):
+                Datainfo.saveinfo('预测不买卖。。。')
+                Datainfo.save_finalinfo('预测不买卖。。。')
+
 
 
 
@@ -568,7 +593,7 @@ class SendDingding:
         text_data ={
         "msgtype" :"text" ,
             "text":{
-                "content": '我们是守护者，也是一群时刻对抗危险和疯狂的可怜虫 ！^_^     -->> '+sendtexts
+                "content": str(datetime.now())+'--->>>我们是守护者，也是一群时刻对抗危险和疯狂的可怜虫 ！^_^     -->> '+sendtexts
             }
         }
         roboturl='https://oapi.dingtalk.com/robot/send?access_token=f8195c9e4ad6da4427d67e80dffed5d07ecaca1d1e79462fb5c0a9c6b12e90f2'
