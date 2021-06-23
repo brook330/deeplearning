@@ -125,14 +125,12 @@ class Datainfo:
         df.to_csv(f'./datas/okex/eth.csv',index=False)
         df = pd.read_csv(f'./datas/okex/eth.csv')
         df['timestamps'] = pd.to_datetime(df['timestamps'],unit='ms')+pd.to_timedelta('8 hours')
-        buyVolumes = df['buyVolumes'].tail(30).values
-        sellVolumes = df['sellVolumes'].tail(30).values
 
-        buyVolumes10 = df['buyVolumes'].tail(10).values
-        sellVolumes10 = df['sellVolumes'].tail(10).values
+        buyVolumes = df['buyVolumes'].tail(10).values
+        sellVolumes = df['sellVolumes'].tail(10).values
 
         print(df)
-        print(str(datetime.now())+'--->>>计算结果--->>>',(sum(buyVolumes)/len(buyVolumes)) / (sum(sellVolumes)/len(sellVolumes)))
+        print(str(datetime.now())+'--->>>(sum(buyVolumes)/len(buyVolumes)) / (sum(sellVolumes)/len(sellVolumes))的计算结果--->>>',(sum(buyVolumes)/len(buyVolumes)) / (sum(sellVolumes)/len(sellVolumes)))
 
         #===获取close数据
         headers = {
@@ -190,12 +188,12 @@ class Datainfo:
         learning = Datainfo.getnextdata(dw,'ETH-USD-SWAP')
         print('learning--->>>',learning)
 
-        if((sum(buyVolumes)/len(buyVolumes)) /(sum(sellVolumes)/len(sellVolumes)) > 1.01 and (sum(buyVolumes10)/len(buyVolumes10)) /(sum(sellVolumes10)/len(sellVolumes10)) > 1.02 and dw['obv'].tail(1).values > dw['maobv'].tail(1).values and learning):
+        if((sum(buyVolumes)/len(buyVolumes)) /(sum(sellVolumes)/len(sellVolumes)) > 1.01 and dw['obv'].tail(1).values > dw['maobv'].tail(1).values and learning):
             print('买入')
             sendtext = '获取数据完毕。。。   判断为： -->>True-->>>  '+str(minute)+'分钟--->>>buyVolumes-->>'+str(df['buyVolumes'].values[-1])+'--->>>sellVolumes-->>'+str(df['sellVolumes'].values[-1])+'  ,预测结果-->>正确   -->>我们是守护者，也是一群时刻对抗危险和疯狂的可怜虫 ！^_^'
             Datainfo.saveinfo(sendtext)
             return '买入'
-        elif((sum(buyVolumes)/len(buyVolumes)) /(sum(sellVolumes)/len(sellVolumes)) < 0.99 and (sum(buyVolumes10)/len(buyVolumes10)) /(sum(sellVolumes10)/len(sellVolumes10)) < 0.97 and dw['obv'].tail(1).values < dw['maobv'].tail(1).values and (not learning)):
+        elif((sum(buyVolumes)/len(buyVolumes)) /(sum(sellVolumes)/len(sellVolumes)) < 0.99 and dw['obv'].tail(1).values < dw['maobv'].tail(1).values and (not learning)):
             print('卖出')
             sendtext = '获取数据完毕。。。   判断为： -->>True-->>>  '+str(minute)+'分钟--->>>buyVolumes-->>'+str(df['buyVolumes'].values[-1])+'--->>>sellVolumes-->>'+str(df['sellVolumes'].values[-1])+'  ,预测结果-->>正确   -->>我们是守护者，也是一群时刻对抗危险和疯狂的可怜虫 ！^_^'
             Datainfo.saveinfo(sendtext)
@@ -324,9 +322,9 @@ class Datainfo:
         df2 = pd.merge(df1, next_open, left_index=True, right_index=True)
         df2.columns = ['Next Close', 'Predicted Next Close', 'Current Close', 'Next Open']
         #画图
-        df2['Signal'] = np.where(df2['Predicted Next Close'] > df2['Next Open'] ,1,0)
+        #df2['Signal'] = np.where(df2['Predicted Next Close'] > df2['Next Open'] ,1,0)
 
-        df2['PL'] =  np.where(df2['Signal'] == 1,(df2['Next Close'] - df2['Next Open'])/df2['Next Open'],0)
+        #df2['PL'] =  np.where(df2['Signal'] == 1,(df2['Next Close'] - df2['Next Open'])/df2['Next Open'],0)
 
         #df2['Strategy'] = (df2['PL'].shift(1)+1).cumprod()
         #df2['return'] = (df2['Next Close'].pct_change()+1).cumprod()
@@ -334,10 +332,10 @@ class Datainfo:
         #df2[['Strategy','return']].dropna().plot(figsize=(10, 6))
 
         #获取预期下个整点的值
-        print(df2['PL'][-2:-1].values[0])
-        Datainfo.saveinfo(df2['PL'][-2:-1].values[0])
+        print(df2['Predicted Next Close'][-2:-1].values[0] > df2['Current Close'][-2:-1].values[0])
+        Datainfo.saveinfo(df2['Predicted Next Close'][-2:-1].values[0] > df2['Current Close'][-2:-1].values[0])
         print(df2.tail(20))
-        return df2['PL'][-2:-1].values[0]>0
+        return df2['Predicted Next Close'][-2:-1].values[0] > df2['Current Close'][-2:-1].values[0]
 
     #获取用户API信息
     def get_userinfo():
@@ -392,7 +390,7 @@ class Datainfo:
         # 批量下单  Place Multiple Orders
         # 批量下单  Place Multiple Orders
         result = tradeAPI.place_multiple_orders([
-             {'instId': 'ETH-USD-SWAP', 'tdMode': 'cross', 'side': 'buy', 'ordType': 'market', 'sz': '3',
+             {'instId': 'ETH-USD-SWAP', 'tdMode': 'cross', 'side': 'buy', 'ordType': 'market', 'sz': '2',
               'posSide': 'long',
               'clOrdId': 'a12344', 'tag': 'test1210'},
     
@@ -412,11 +410,11 @@ class Datainfo:
 
         # 策略委托下单  Place Algo Order
         result = tradeAPI.place_algo_order('ETH-USD-SWAP', 'cross', 'sell', ordType='conditional',
-                                            sz='3',posSide='long', tpTriggerPx=str(float(lastprice)+50), tpOrdPx=str(float(lastprice)+50))
+                                            sz='2',posSide='long', tpTriggerPx=str(float(lastprice)+50), tpOrdPx=str(float(lastprice)+50))
         #Datainfo.saveinfo(str(datetime.now())+'设置止盈完毕。。。'+str(float(lastprice)+50))
 
 
-        sendtext = str(datetime.now())+'--->>>100倍杠杆，全仓委托：买入ETH-USD-SWAP -->> 3笔，价格是'+str(lastprice)+'，设置止盈完毕。。。'+str(float(lastprice)+50)
+        sendtext = str(datetime.now())+'--->>>100倍杠杆，全仓委托：买入ETH-USD-SWAP -->> 2笔，价格是'+str(lastprice)+'，设置止盈完毕。。。'+str(float(lastprice)+50)
         Datainfo.save_finalinfo(str(datetime.now())+'--->>>我们是守护者，也是一群时刻对抗危险和疯狂的可怜虫 ！^_^     -->>'+sendtext)
         SendDingding.sender(sendtext)
 
@@ -435,7 +433,7 @@ class Datainfo:
         tradeAPI = Trade.TradeAPI(api_key, secret_key, passphrase, False, flag)
         # 批量下单  Place Multiple Orders
         result = tradeAPI.place_order(instId='ETH-USD-SWAP', tdMode='cross', side='sell', posSide='short',
-                              ordType='market', sz='3')
+                              ordType='market', sz='2')
         print(result)
 
         #Datainfo.saveinfo('下单完毕。。。')
@@ -450,11 +448,11 @@ class Datainfo:
 
         # 策略委托下单  Place Algo Order
         result = tradeAPI.place_algo_order('ETH-USD-SWAP', 'cross', 'buy', ordType='conditional',
-                                            sz='3',posSide='short', tpTriggerPx=str(float(lastprice)-50), tpOrdPx=str(float(lastprice)-50))
+                                            sz='2',posSide='short', tpTriggerPx=str(float(lastprice)-50), tpOrdPx=str(float(lastprice)-50))
         #Datainfo.saveinfo(str(datetime.now)+'设置止盈完毕。。。'+str(float(lastprice)-50))
 
 
-        sendtext = str(datetime.now())+'--->>>卖出100倍杠杆，全仓委托：ETH-USD-SWAP -->> 3笔，价格是'+str(lastprice)+'，设置止盈完毕。。。'+str(float(lastprice)-50)
+        sendtext = str(datetime.now())+'--->>>卖出100倍杠杆，全仓委托：ETH-USD-SWAP -->> 2笔，价格是'+str(lastprice)+'，设置止盈完毕。。。'+str(float(lastprice)-50)
         Datainfo.save_finalinfo(str(datetime.now())+'--->>>我们是守护者，也是一群时刻对抗危险和疯狂的可怜虫 ！^_^     -->>'+sendtext)
         SendDingding.sender(sendtext)
 
