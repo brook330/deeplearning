@@ -331,10 +331,10 @@ class Datainfo:
         #df2[['Strategy','return']].dropna().plot(figsize=(10, 6))
 
         #获取预期下个整点的值
-        print(df2['Predicted Next Close'][-2:-1].values[0] > df2['Current Close'][-2:-1].values[0])
-        Datainfo.saveinfo(df2['Predicted Next Close'][-2:-1].values[0] > df2['Current Close'][-2:-1].values[0])
-        print(df2.tail(20))
-        return df2['Predicted Next Close'][-2:-1].values[0] > df2['Current Close'][-2:-1].values[0]
+        print(df2['Predicted Next Close'].tail(1).values[0] > df2['Current Close']tail(1).values[0])
+        Datainfo.saveinfo(df2['Predicted Next Close'].tail(1).values[0] > df2['Current Close'].tail(1).values[0])
+        print(df2.tail(5))
+        return df2['Predicted Next Close'].tail(1).values[0] > df2['Current Close'].tail(1).values[0]
 
     #获取用户API信息
     def get_userinfo():
