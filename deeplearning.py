@@ -181,7 +181,6 @@ class Datainfo:
         Datainfo.getfulldata(dw)
         dw = pd.read_csv(f'./datas/okex/eth/close.csv')
         #===判断是否买入或者卖出
-        print('(sum(buyVolumes10)/len(buyVolumes10)) /(sum(sellVolumes10)/len(sellVolumes10))  -->>',(sum(buyVolumes10)/len(buyVolumes10)) /(sum(sellVolumes10)/len(sellVolumes10))  )
         print('obv-->>',dw['obv'].tail(1).values ,'MA_obv-->>', dw['maobv'].tail(1).values)
 
         #人工智能计算结果
