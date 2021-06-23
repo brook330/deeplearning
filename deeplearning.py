@@ -577,14 +577,14 @@ class Datainfo:
           
 
             f_day = open(f'./datas/log/day_buy.txt',"r",encoding='utf-8')   #设置文件对象
-            day_buy = f_day.read()     #将txt文件的所有内容读入到字符串str中
+            day_buy = f_day.read()[-200:]     #将txt文件的所有内容读入到字符串str中
             f_day.close()   #将文件关闭
             if(day_buy):
                 self.textBrowsertwo.clear()
                 self.textBrowsertwo.append(day_buy)
 
             f_info = open(f'./datas/log/infodata.txt',"r",encoding='utf-8')   #设置文件对象
-            infodata = f_info.read()     #将txt文件的所有内容读入到字符串str中
+            infodata = f_info.read()[-200:]     #将txt文件的所有内容读入到字符串str中
             f_info.close()   #将文件关闭
             if(infodata):
                 self.textBrowserone.clear()
