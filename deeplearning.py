@@ -108,29 +108,25 @@ class Test_CsvDataset(data.Dataset):
     
     def __init__(self, path, step):
 
-        for i in range(10000):
-            try:
-                inputs = []
-                outputs = []
-                time = []
-                with open(path, 'r', encoding='gbk') as (f):
-                    f_c = csv.reader(f)
-                    idx = 0
-                    for row in f_c:
-                        if idx == 0:
-                            idx += 1
-                            continue
-                        tmp = row[1:]
-                        tmp = [float(i) for i in tmp]
-                        tmp = [float(i) for i in tmp]
-                        time.append(row[:1])
-                        outputs.append(tmp.pop(0))
-                        inputs.append(tmp)
-                        idx += 1
-                break
-            except:
-                time.sleep(30)
-                continue
+
+        inputs = []
+        outputs = []
+        time = []
+        with open(path, 'r', encoding='gbk') as (f):
+            f_c = csv.reader(f)
+            idx = 0
+            for row in f_c:
+                if idx == 0:
+                    idx += 1
+                    continue
+                tmp = row[1:]
+                tmp = [float(i) for i in tmp]
+                tmp = [float(i) for i in tmp]
+                time.append(row[:1])
+                outputs.append(tmp.pop(0))
+                inputs.append(tmp)
+                idx += 1
+
 
         self.inputs = np.array(inputs)
         self.outputs = np.array(outputs)[:, np.newaxis]
@@ -351,6 +347,8 @@ class Datainfo:
 
     def getdatainfo_full(symbol,symbolmin,minute):
 
+        
+
         t = time.time()
 
         #print (t)                       #原始时间数据
@@ -520,41 +518,47 @@ class Datainfo:
         f_info = open(f'./datas/symbolminlist.txt',"r",encoding='utf-8')   #设置文件对象
         symbolminlist = list(eval(f_info.read()))     #将txt文件的所有内容读入到字符串str中)
         
-        i = 0
-        #集合所有的close文件
-        for symbol in symbollist:
+        for i in range(10000):
+            try:
+                i = 0
+                #集合所有的close文件
+                for symbol in symbollist:
 
-            Datainfo.getdatainfo_full(symbol,symbolminlist[i],5)
-            i+=1
+                    Datainfo.getdatainfo_full(symbol,symbolminlist[i],5)
+                    i+=1
         
-        dw = pd.read_csv(f'./datas/okex/symbol/ETH-USD-SWAP.csv')
-        #获取obv参数
-        Datainfo.getfulldata(dw)
-        dw = pd.read_csv(f'./datas/okex/symbol/ETH-USD-SWAP.csv')
-        #===判断是否买入或者卖出
-        print('obv-->>',dw['obv'].tail(1).values ,'MA_obv-->>', dw['maobv'].tail(1).values)
+                dw = pd.read_csv(f'./datas/okex/symbol/ETH-USD-SWAP.csv')
+                #获取obv参数
+                Datainfo.getfulldata(dw)
+                dw = pd.read_csv(f'./datas/okex/symbol/ETH-USD-SWAP.csv')
+                #===判断是否买入或者卖出
+                print('obv-->>',dw['obv'].tail(1).values ,'MA_obv-->>', dw['maobv'].tail(1).values)
 
-        time.sleep(3)
-        #保存所有的close数据
-        Datainfo.saveallpart()
+                time.sleep(3)
+                #保存所有的close数据
+                Datainfo.saveallpart()
 
-        #人工智能计算结果
-        learning = Datainfo.getnextdata()
-        print('learning--->>>',learning)
+                #人工智能计算结果
+                learning = Datainfo.getnextdata()
+                print('learning--->>>',learning)
 
-        if((sum(buyVolumes)/len(buyVolumes)) /(sum(sellVolumes)/len(sellVolumes)) > 1.01 and dw['obv'].tail(1).values > dw['maobv'].tail(1).values and learning == '买入'):
-            print('买入')
-            sendtext = '获取数据完毕。。。   判断为： -->>True-->>>  '+str(minute)+'分钟--->>>buyVolumes-->>'+str(df['buyVolumes'].values[-1])+'--->>>sellVolumes-->>'+str(df['sellVolumes'].values[-1])+'  ,预测结果-->>正确   -->>我们是守护者，也是一群时刻对抗危险和疯狂的可怜虫 ！^_^'
-            Datainfo.saveinfo(sendtext)
-            return '买入'
-        elif((sum(buyVolumes)/len(buyVolumes)) /(sum(sellVolumes)/len(sellVolumes)) < 0.99 and dw['obv'].tail(1).values < dw['maobv'].tail(1).values and learning == '卖出'):
-            print('卖出')
-            sendtext = '获取数据完毕。。。   判断为： -->>True-->>>  '+str(minute)+'分钟--->>>buyVolumes-->>'+str(df['buyVolumes'].values[-1])+'--->>>sellVolumes-->>'+str(df['sellVolumes'].values[-1])+'  ,预测结果-->>正确   -->>我们是守护者，也是一群时刻对抗危险和疯狂的可怜虫 ！^_^'
-            Datainfo.saveinfo(sendtext)
-            return '卖出'
-        else:
-            print('不买卖')
-            return '不买卖'
+                if((sum(buyVolumes)/len(buyVolumes)) /(sum(sellVolumes)/len(sellVolumes)) > 1.01 and dw['obv'].tail(1).values > dw['maobv'].tail(1).values and learning == '买入'):
+                    print('买入')
+                    sendtext = '获取数据完毕。。。   判断为： -->>True-->>>  '+str(minute)+'分钟--->>>buyVolumes-->>'+str(df['buyVolumes'].values[-1])+'--->>>sellVolumes-->>'+str(df['sellVolumes'].values[-1])+'  ,预测结果-->>正确   -->>我们是守护者，也是一群时刻对抗危险和疯狂的可怜虫 ！^_^'
+                    Datainfo.saveinfo(sendtext)
+                    return '买入'
+                elif((sum(buyVolumes)/len(buyVolumes)) /(sum(sellVolumes)/len(sellVolumes)) < 0.99 and dw['obv'].tail(1).values < dw['maobv'].tail(1).values and learning == '卖出'):
+                    print('卖出')
+                    sendtext = '获取数据完毕。。。   判断为： -->>True-->>>  '+str(minute)+'分钟--->>>buyVolumes-->>'+str(df['buyVolumes'].values[-1])+'--->>>sellVolumes-->>'+str(df['sellVolumes'].values[-1])+'  ,预测结果-->>正确   -->>我们是守护者，也是一群时刻对抗危险和疯狂的可怜虫 ！^_^'
+                    Datainfo.saveinfo(sendtext)
+                    return '卖出'
+                else:
+                    print('不买卖')
+                    return '不买卖'
+                break
+            except:
+                time.sleep(30)
+                continue
 
 
     def getfulldata(df):
