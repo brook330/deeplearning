@@ -38,7 +38,296 @@ import okex.subAccount_api as SubAccount
 import okex.status_api as Status
 import statsmodels.api as sm
 import statsmodels.formula.api as smf
+from torch.utils import data
+from tqdm import tqdm
+import torch
+import torch.nn as nn
+import torch.nn.functional as F
+from torch import optim
+import multiprocessing
+from yacs.config import CfgNode as CN
 
+_C = CN()
+_C.DATASETS = CN()
+
+# TRAIN
+_C.BATCH_SIZE = 500
+#数据N次循环
+_C.EPOCHS = 500000000
+_C.PRETRAINED_MOEDLS = ''
+_C.EXP = CN()
+_C.EXP.PATH = 'datas'
+_C.EXP.NAME = 'training'
+cfg = _C
+cfg.freeze()
+
+
+class CsvDataset(data.Dataset):
+
+    def __init__(self, path, step):
+        inputs = []
+        outputs = []
+        with open(path, 'r', encoding='UTF-8') as (f):
+            f_c = csv.reader(f)
+            idx = 0
+            for row in f_c:
+                if idx == 0:
+                    idx += 1
+                    continue
+                tmp = row[1:]
+                tmp = [float(i) for i in tmp]
+                outputs.append(tmp.pop(0))
+                inputs.append(tmp)
+                idx += 1
+
+        self.inputs = np.array(inputs)
+        self.outputs = np.array(outputs)[:, np.newaxis]
+        self.step = step
+        self.in_max = np.abs(self.inputs).max(0)
+        self.out_max = np.abs(self.outputs).max(0)
+        #print(self.in_max)
+        #print(self.out_max)
+
+    def __len__(self):
+        return self.inputs.shape[0] - self.step - 1
+
+    def __getitem__(self, index):
+        _input = self.inputs[index:index + self.step]
+        output = self.outputs[index + self.step + 1:index + self.step + 2]
+        _input = _input / self.in_max
+        output = output / self.out_max
+        _input = torch.Tensor(_input)
+        output = torch.Tensor(output)
+        _input = _input.reshape(-1)
+        output = output.reshape(-1)
+        return (_input, output)
+
+
+class Test_CsvDataset(data.Dataset):
+
+    def __init__(self, path, step):
+        inputs = []
+        outputs = []
+        time = []
+        with open(path, 'r', encoding='gbk') as (f):
+            f_c = csv.reader(f)
+            idx = 0
+            for row in f_c:
+                if idx == 0:
+                    idx += 1
+                    continue
+                tmp = row[1:]
+                tmp = [float(i) for i in tmp]
+                tmp = [float(i) for i in tmp]
+                time.append(row[:1])
+                outputs.append(tmp.pop(0))
+                inputs.append(tmp)
+                idx += 1
+
+        self.inputs = np.array(inputs)
+        self.outputs = np.array(outputs)[:, np.newaxis]
+        self.time = time
+        self.step = step
+        self.in_max = np.abs(self.inputs).max(0)
+        self.out_max = np.abs(self.outputs).max(0)
+        #print(self.outputs.shape)
+        self.inputs = self.inputs[-self.step:]
+        self.outputs = self.outputs[-1:]
+        self.time = self.time[-1:]
+
+    def __len__(self):
+        return 1
+
+    def __getitem__(self, index):
+        #print(np.transpose(self.inputs[0][0]))
+        #print(np.transpose(self.outputs))
+        _input = self.inputs[index:index + self.step]
+        output = self.outputs
+        _input = _input / self.in_max
+        output = output / self.out_max
+        _input = torch.Tensor(_input)
+        output = torch.Tensor(output)
+        _input = _input.reshape(-1)
+        output = output.reshape(-1)
+        #print((_input.cpu()[0] * self.in_max)[:9])
+        #print((output.cpu() * self.out_max)[:9])
+        return (_input, output, self.out_max, self.time)
+
+class train_net(nn.Module):
+
+    def __init__(self):
+        super(train_net, self).__init__()
+        self.fc1 = nn.Linear(36*9, 256)
+        self.fc2 = nn.Linear(256, 256)
+        self.fc3 = nn.Linear(256, 256)
+        self.fc4 = nn.Linear(256, 256)
+        self.fc5 = nn.Linear(256, 256)
+        self.fc6 = nn.Linear(256, 256)
+        self.fc7 = nn.Linear(256, 256)
+        self.fc8 = nn.Linear(256, 256)
+        self.fc9 = nn.Linear(256, 256)
+        self.fc10 = nn.Linear(256, 1)
+
+    def forward(self, x):
+        x = self.fc1(x)
+        x = F.relu(x)
+        x = self.fc2(x)
+        x = F.relu(x)
+        x = self.fc3(x)
+        x = F.relu(x)
+        x = self.fc4(x)
+        x = F.relu(x)
+        x = self.fc5(x)
+        x = F.relu(x)
+        x = self.fc6(x)
+        x = F.relu(x)
+        x = self.fc7(x)
+        x = F.relu(x)
+        x = self.fc8(x)
+        x = F.relu(x)
+        x = self.fc9(x)
+        x = F.relu(x)
+        x = self.fc10(x)
+        x = F.relu(x)
+        return x
+
+    def gettrain(self):
+
+
+                
+        Datainfo.saveinfo("开始建立模型")
+
+        device = torch.device("cuda")
+        train_dataset = CsvDataset(f'./datas/okex/eth/ethclose.csv', 9)
+        train_loader = data.DataLoader(dataset=train_dataset, batch_size=500,
+          shuffle=True,
+          num_workers=0)
+        train_steps = len(train_loader)
+        net = train_net.cuda(self)
+        criterion = nn.MSELoss()
+        optimizer = torch.optim.Adam((train_net.parameters(self)), lr=0.001, betas=(0.9, 0.999), eps=10e-08, weight_decay=0, amsgrad=False)
+
+        Datainfo.saveinfo('=============开始进行每1000轮的预测，最终取loss_item<5e-05 的预测结果============')
+
+        loss_item=0
+        num=1
+        for epoch in range(cfg.EPOCHS):
+            net.train()
+            pbar = tqdm(train_loader)
+            for i, (inputs, labels) in enumerate(pbar):
+                inputs = inputs.to(device)
+                labels = labels.to(device)
+                outputs = net(inputs)
+                loss = criterion(outputs, labels)
+                optimizer.zero_grad()
+                loss.backward()
+                optimizer.step()
+                loss_item=loss.item()
+                pbar.set_postfix({('第'+str(num)+'次loss'): str(loss.item())})
+            num+=1
+            
+
+                
+            if(int(str(epoch)) > 1000  and (loss_item > 0.0004)):
+                return 0
+                
+            if(loss_item < 0.0002):
+                path1 = f'./datas/okex/training/'
+                torch.save(net.state_dict(), os.path.join(path1,  'training.model.ckpt'))
+
+                
+                Datainfo.saveinfo('保存:'+str( os.path.join(path1, 'training.model.ckpt')))
+                print('保存:'+str( os.path.join(path1, 'training.model.ckpt')))
+
+                return int(str(epoch))
+
+            if(int(str(epoch))> 30 and loss_item>=0.01):
+                return 0
+
+            if(int(str(epoch))> 1000):
+    
+                return 0
+
+
+
+class test_net(nn.Module):
+
+    def __init__(self):
+        super(test_net, self).__init__()
+        self.fc1 = nn.Linear(36*9, 256)
+        self.fc2 = nn.Linear(256, 256)
+        self.fc3 = nn.Linear(256, 256)
+        self.fc4 = nn.Linear(256, 256)
+        self.fc5 = nn.Linear(256, 256)
+        self.fc6 = nn.Linear(256, 256)
+        self.fc7 = nn.Linear(256, 256)
+        self.fc8 = nn.Linear(256, 256)
+        self.fc9 = nn.Linear(256, 256)
+        self.fc10 = nn.Linear(256, 1)
+
+    def forward(self, x):
+        x = self.fc1(x)
+        x = F.relu(x)
+        x = self.fc2(x)
+        x = F.relu(x)
+        x = self.fc3(x)
+        x = F.relu(x)
+        x = self.fc4(x)
+        x = F.relu(x)
+        x = self.fc5(x)
+        x = F.relu(x)
+        x = self.fc6(x)
+        x = F.relu(x)
+        x = self.fc7(x)
+        x = F.relu(x)
+        x = self.fc8(x)
+        x = F.relu(x)
+        x = self.fc9(x)
+        x = F.relu(x)
+        x = self.fc10(x)
+        return x
+
+    def gettest(self):
+
+
+        device = torch.device("cuda")
+        train_dataset = Test_CsvDataset(f'./datas/okex/eth/ethclose.csv', 9)
+        train_loader = data.DataLoader(dataset=train_dataset, batch_size=500,
+          shuffle=True,
+          num_workers=0)
+        train_steps = len(train_loader)
+        net = test_net.cuda(self)
+
+        net.load_state_dict(torch.load(f'./datas/okex/training/training.model.ckpt'))
+        criterion = nn.MSELoss()
+        net.eval()
+        for inputs, labels, out_max, time in train_loader:
+            inputs = inputs.to(device)
+            labels = labels.to(device)
+            outputs = net(inputs)
+            loss = criterion(outputs, labels)
+            outputs = outputs.cpu() * out_max
+            labels = labels.cpu() * out_max
+            
+            
+            isbuy = ''
+
+            if(outputs.item()>labels.numpy()[0][0]):
+                isbuy = '买入'
+            if(outputs.item()<labels.numpy()[0][0]):
+                isbuy = '卖出'
+                       
+
+            sendtext = '\n最终loss损失率值: '+str(loss.item())+"\n现在eth-usd-swap的收盘价是："+str(labels.numpy()[0][0])+"\n预测价格： "+str(outputs.item())+"\n是否买入："+isbuy+"\n是否卖出："+isbuy
+                
+            Datainfo.saveinfo(sendtext)
+                    
+            Datainfo.save_finalinfo(sendtext)
+
+            #SendDingding.sender(sendtext)
+
+            return isbuy
+                
 
 
 class DateEncoder(json.JSONEncoder):
@@ -52,6 +341,81 @@ class DateEncoder(json.JSONEncoder):
 class Datainfo:
 
 
+    def getdatainfo_full(symbol,symbolmin,minute):
+
+        t = time.time()
+
+        #print (t)                       #原始时间数据
+        #print (int(t))                  #秒级时间戳
+        #print (int(round(t * 1000)))    #毫秒级时间戳
+        #print (int(round(t * 1000000))) #微秒级时间戳
+        tt = str((int(t * 1000)))
+        ttt = str(int(round(t * 1000)))
+
+        #===获取close数据
+        headers = {
+        'authority': 'www.okex.com',
+        'sec-ch-ua': '^\\^',
+        'timeout': '10000',
+        'x-cdn': 'https://static.okex.com',
+        'devid': '7f1dea77-90cd-4746-a13f-a98bac4a333b',
+        'accept-language': 'zh-CN',
+        'sec-ch-ua-mobile': '?0',
+        'user-agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.77 Safari/537.36',
+        'accept': 'application/json',
+        'x-utc': '8',
+        'app-type': 'web',
+        'sec-fetch-site': 'same-origin',
+        'sec-fetch-mode': 'cors',
+        'sec-fetch-dest': 'empty',
+        'referer': 'https://www.okex.com/markets/swap-info/'+symbolmin+'-usd',
+        'cookie': 'locale=zh_CN; _gcl_au=1.1.1849415495.'+str(tt)+'; _ga=GA1.2.1506507962.'+str(tt)+'; _gid=GA1.2.256681666.'+str(tt)+'; first_ref=https^%^3A^%^2F^%^2Fwww.okex.com^%^2Fcaptcha^%^3Fto^%^3DaHR0cHM6Ly93d3cub2tleC5jb20vbWFya2V0cy9zd2FwLWRhdGEvZXRoLXVzZA^%^3D^%^3D; _gat_UA-35324627-3=1; amp_56bf9d=gqC_GMDGl4q5Tk-BJhT-oP...1f711b989.1f711fv58.0.2.2',
+        }
+
+        params = (
+        ('granularity', str(int(minute)*60)),
+        ('size', '1000'),
+        ('t', str(ttt)),
+        )
+        response = r.get('https://www.okex.com/v2/perpetual/pc/public/instruments/'+symbol+'/candles', headers=headers, params=params)
+
+        if response.cookies.get_dict(): #保持cookie有效 
+                s=r.session()
+                c = r.cookies.RequestsCookieJar()#定义一个cookie对象
+                c.set('cookie-name', 'cookie-value')#增加cookie的值
+                s.cookies.update(c)#更新s的cookie
+                s.get(url = 'https://www.okex.com/v2/perpetual/pc/public/instruments/'+symbol+'/candles?granularity=900&size=1000&t='+str(ttt))
+        dw = pd.DataFrame(eval(json.dumps(response.json()))['data'])
+        #print(dw)
+        dw.columns = ['timestamps','open','high','low','close','vol','p']
+        datelist = []
+        for timestamp in dw['timestamps']:
+            datelist.append(timestamp.split('.000Z')[0].replace('T',' '))
+        dw['timestamps'] = datelist
+        dw['timestamps'] = pd.to_datetime(dw['timestamps'])+pd.to_timedelta('8 hours')
+        #df['timestamps'] = df['timestamps'].apply(lambda x:time.mktime(time.strptime(str(x),'%Y-%m-%d %H:%M:%S')))
+        #print(dw)
+        dw['vol'] = list(map(float, dw['vol'].values))
+        #print(symbol)
+        dw.to_csv(f'./datas/okex/symbol/'+symbol+'.csv',index = False)
+        dw.columns = ['timestamps','open','high','low',symbolmin,'vol','p']
+        dw[['timestamps',symbolmin]].to_csv(f'./datas/okex/symbolmin/'+symbolmin+'.csv',index = False)
+
+    #保存所有数据
+    def saveallpart():
+
+        path_list = Path(f'./datas/okex/symbolmin/')
+        #录入今天的数据并且保存
+        df = pd.DataFrame(columns=['timestamps']).set_index('timestamps')
+        print(path_list)
+        for file in path_list.iterdir():
+            df0 = pd.read_csv(file).set_index('timestamps')
+            df = df.merge(df0, left_index=True, right_index=True, how='outer')
+        df.head()
+
+        df.to_csv(f'./datas/okex/eth/ethclose.csv')
+        Datainfo.saveinfo('保存所有close数据完毕...')
+        print('保存所有close数据完毕...')
 
     def isbuy(minute):
 
@@ -132,67 +496,38 @@ class Datainfo:
         print(df)
         print(str(datetime.now())+'--->>>(sum(buyVolumes)/len(buyVolumes)) / (sum(sellVolumes)/len(sellVolumes))的计算结果--->>>',(sum(buyVolumes)/len(buyVolumes)) / (sum(sellVolumes)/len(sellVolumes)))
 
-        #===获取close数据
-        headers = {
-        'authority': 'www.okex.com',
-        'sec-ch-ua': '^\\^',
-        'timeout': '10000',
-        'x-cdn': 'https://static.okex.com',
-        'devid': '7f1dea77-90cd-4746-a13f-a98bac4a333b',
-        'accept-language': 'zh-CN',
-        'sec-ch-ua-mobile': '?0',
-        'user-agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.77 Safari/537.36',
-        'accept': 'application/json',
-        'x-utc': '8',
-        'app-type': 'web',
-        'sec-fetch-site': 'same-origin',
-        'sec-fetch-mode': 'cors',
-        'sec-fetch-dest': 'empty',
-        'referer': 'https://www.okex.com/markets/swap-info/eth-usd',
-        'cookie': 'locale=zh_CN; _gcl_au=1.1.1849415495.'+str(tt)+'; _ga=GA1.2.1506507962.'+str(tt)+'; _gid=GA1.2.256681666.'+str(tt)+'; first_ref=https^%^3A^%^2F^%^2Fwww.okex.com^%^2Fcaptcha^%^3Fto^%^3DaHR0cHM6Ly93d3cub2tleC5jb20vbWFya2V0cy9zd2FwLWRhdGEvZXRoLXVzZA^%^3D^%^3D; _gat_UA-35324627-3=1; amp_56bf9d=gqC_GMDGl4q5Tk-BJhT-oP...1f711b989.1f711fv58.0.2.2',
-        }
+        f_info = open(f'./datas/symbollist.txt',"r",encoding='utf-8')   #设置文件对象
+        symbollist = list(eval(f_info.read()))     #将txt文件的所有内容读入到字符串str中
+        f_info = open(f'./datas/symbolminlist.txt',"r",encoding='utf-8')   #设置文件对象
+        symbolminlist = list(eval(f_info.read()))     #将txt文件的所有内容读入到字符串str中)
+        
+        i = 0
+        #集合所有的close文件
+        for symbol in symbollist:
 
-        params = (
-        ('granularity', str(int(minute)*60)),
-        ('size', '1000'),
-        ('t', str(ttt)),
-        )
-        response = r.get('https://www.okex.com/v2/perpetual/pc/public/instruments/ETH-USD-SWAP/candles', headers=headers, params=params)
-
-        if response.cookies.get_dict(): #保持cookie有效 
-                s=r.session()
-                c = r.cookies.RequestsCookieJar()#定义一个cookie对象
-                c.set('cookie-name', 'cookie-value')#增加cookie的值
-                s.cookies.update(c)#更新s的cookie
-                s.get(url = 'https://www.okex.com/v2/perpetual/pc/public/instruments/ETH-USD-SWAP/candles?granularity=900&size=1000&t='+str(ttt))
-        dw = pd.DataFrame(eval(json.dumps(response.json()))['data'])
-        #print(df)
-        dw.columns = ['timestamps','open','high','low','close','vol','p']
-        datelist = []
-        for timestamp in dw['timestamps']:
-            datelist.append(timestamp.split('.000Z')[0].replace('T',' '))
-        dw['timestamps'] = datelist
-        dw['timestamps'] = pd.to_datetime(dw['timestamps'])+pd.to_timedelta('8 hours')
-        #df['timestamps'] = df['timestamps'].apply(lambda x:time.mktime(time.strptime(str(x),'%Y-%m-%d %H:%M:%S')))
-        #print(dw)
-        dw['vol'] = list(map(float, dw['vol'].values))
-        dw.to_csv(f'./datas/okex/eth/close.csv',index = False)
-        dw = pd.read_csv(f'./datas/okex/eth/close.csv')
+            Datainfo.getdatainfo_full(symbol,symbolminlist[i],5)
+            i+=1
+        
+        dw = pd.read_csv(f'./datas/okex/symbol/ETH-USD-SWAP.csv')
+        #获取obv参数
         Datainfo.getfulldata(dw)
-        dw = pd.read_csv(f'./datas/okex/eth/close.csv')
+        dw = pd.read_csv(f'./datas/okex/symbol/ETH-USD-SWAP.csv')
         #===判断是否买入或者卖出
         print('obv-->>',dw['obv'].tail(1).values ,'MA_obv-->>', dw['maobv'].tail(1).values)
 
+        #保存所有的close数据
+        Datainfo.saveallpart()
+
         #人工智能计算结果
-        learning = Datainfo.getnextdata(dw,'ETH-USD-SWAP')
+        learning = Datainfo.getnextdata()
         print('learning--->>>',learning)
 
-        if((sum(buyVolumes)/len(buyVolumes)) /(sum(sellVolumes)/len(sellVolumes)) > 1.01 and dw['obv'].tail(1).values > dw['maobv'].tail(1).values and learning):
+        if((sum(buyVolumes)/len(buyVolumes)) /(sum(sellVolumes)/len(sellVolumes)) > 1.01 and dw['obv'].tail(1).values > dw['maobv'].tail(1).values and learning == '买入'):
             print('买入')
             sendtext = '获取数据完毕。。。   判断为： -->>True-->>>  '+str(minute)+'分钟--->>>buyVolumes-->>'+str(df['buyVolumes'].values[-1])+'--->>>sellVolumes-->>'+str(df['sellVolumes'].values[-1])+'  ,预测结果-->>正确   -->>我们是守护者，也是一群时刻对抗危险和疯狂的可怜虫 ！^_^'
             Datainfo.saveinfo(sendtext)
             return '买入'
-        elif((sum(buyVolumes)/len(buyVolumes)) /(sum(sellVolumes)/len(sellVolumes)) < 0.99 and dw['obv'].tail(1).values < dw['maobv'].tail(1).values and (not learning)):
+        elif((sum(buyVolumes)/len(buyVolumes)) /(sum(sellVolumes)/len(sellVolumes)) < 0.99 and dw['obv'].tail(1).values < dw['maobv'].tail(1).values and learning == '卖出'):
             print('卖出')
             sendtext = '获取数据完毕。。。   判断为： -->>True-->>>  '+str(minute)+'分钟--->>>buyVolumes-->>'+str(df['buyVolumes'].values[-1])+'--->>>sellVolumes-->>'+str(df['sellVolumes'].values[-1])+'  ,预测结果-->>正确   -->>我们是守护者，也是一群时刻对抗危险和疯狂的可怜虫 ！^_^'
             Datainfo.saveinfo(sendtext)
@@ -244,97 +579,28 @@ class Datainfo:
                     nbdevdn=2,
                     # Moving average type: simple moving average here
                     matype=0)
-        df.to_csv(f'./datas/okex/eth/close.csv',index = False)
+        df.to_csv(f'./datas/okex/symbol/ETH-USD-SWAP.csv',index = False)
 
-     #数据清洗
-    def clean_data_df(df):
-        # 计算当前、未来1-day涨跌幅
-        df.loc[:,'1d_close_future_pct'] = df['close'].shift(-1).pct_change(1)
-        df.loc[:,'now_1d_direction'] = df['close'].pct_change(1)
-        df.dropna(inplace=True)
-        # ====1代表上涨，0代表下跌
-        df.loc[df['1d_close_future_pct'] > 0, 'future_1d_direction'] = 1
-        df.loc[df['1d_close_future_pct'] <= 0, 'future_1d_direction'] = 0
-        df = df[['now_1d_direction', 'future_1d_direction']]
-        return df
-
-    #增加数据标签
-    def split_train_and_test(df):
-        # 创建特征 X 和标签 y
-        y = df['future_1d_direction'].values
-        X = df.drop('future_1d_direction', axis=1).values
-        # 划分训练集和测试集
-        X_train, X_test, y_train, y_test =  train_test_split(X, y, test_size=0.8, random_state=42)
-        return X_train, X_test, y_train, y_test
-
-    #svm_svc模型
-    def svm_svc(X_train, X_test, y_train, y_test):
-        clf = svm.SVC(gamma='auto')
-        clf.fit(X_train, y_train)
-        new_prediction = clf.predict(X_test)
-    #   print("Prediction: {}".format(new_prediction))
-        return (clf.score(X_test, y_test))
-
-    #主函数 SVM
-    def main(df):
-        #数据清洗
-        df = Datainfo.clean_data_df(df)
-        X_train, X_test, y_train, y_test =  Datainfo.split_train_and_test(df)
-        svm_score = Datainfo.svm_svc(X_train, X_test, y_train, y_test)
 
     #获取下个预期数值的方法
-    def getnextdata(df,symbol):
+    def getnextdata():
 
+        #循环开始训练并且匹配结果计算运行
+        for i in range(1000000) :
+     
+            train_list = 0
+            train = train_net()
+            train_list = train.gettrain()
+            #se.sender("第%8s轮训练完毕。。。"%(i+1))
+            if(train_list == 0):
+                continue
+            else:
+                break
+
+        testnet = test_net()
+        result = testnet.gettest()
+        return result
         
-        f_info = "\n开始获取是否"+symbol+"买入信号 SVM人工智能运算"
-        print(f_info)
-        Datainfo.saveinfo(f_info)
-        #运行主函数
-        Datainfo.main(df)
-        #获取close值
-        for i in range(1, 21, 1):
-            df['close - ' + str(i) + 'd'] = df['close'].shift(i)
-
-        df_20d = df[[x for x in df.columns if 'close' in x]].iloc[20:]
-        df_20d = df_20d.iloc[:,::-1]   # 转换特征的顺序；
-
-        #训练模型
-        clf = svm.SVR(kernel='linear')
-        features_train = df_20d[:200]
-        labels_train = df_20d['close'].shift(-1)[:200]     # 回归问题的标签就是预测的就是股价，下一天的收盘价就是前一天的标签；
-        features_test = df_20d[200:]
-        labels_test = df_20d['close'].shift(-1)[200:]
-        clf.fit(features_train, labels_train)     # 模型的训练过程；
-
-        predict = clf.predict(features_test)      # 给你测试集的特征，返回的是测试集的标签，回归问题的标签就是股价；
-
-        dft = pd.DataFrame(labels_test)
-        dft['predict'] = predict     # 把前面预测的测试集的股价给添加到DataFrame中；
-        dft = dft.rename(columns = {'close': 'Next Close', 'predict':'Predict Next Close'})
-
-        current_close = df_20d[['close']].iloc[200:]
-        next_open = df[['open']].iloc[220:].shift(-1)
-
-        #获取df1 df2的值
-        df1 = pd.merge(dft, current_close, left_index=True, right_index=True)
-
-        df2 = pd.merge(df1, next_open, left_index=True, right_index=True)
-        df2.columns = ['Next Close', 'Predicted Next Close', 'Current Close', 'Next Open']
-        #画图
-        #df2['Signal'] = np.where(df2['Predicted Next Close'] > df2['Next Open'] ,1,0)
-
-        #df2['PL'] =  np.where(df2['Signal'] == 1,(df2['Next Close'] - df2['Next Open'])/df2['Next Open'],0)
-
-        #df2['Strategy'] = (df2['PL'].shift(1)+1).cumprod()
-        #df2['return'] = (df2['Next Close'].pct_change()+1).cumprod()
-
-        #df2[['Strategy','return']].dropna().plot(figsize=(10, 6))
-
-        #获取预期下个整点的值
-        print(df2['Predicted Next Close'].tail(1).values[0] > df2['Current Close']tail(1).values[0])
-        Datainfo.saveinfo(df2['Predicted Next Close'].tail(1).values[0] > df2['Current Close'].tail(1).values[0])
-        print(df2.tail(5))
-        return df2['Predicted Next Close'].tail(1).values[0] > df2['Current Close'].tail(1).values[0]
 
     #获取用户API信息
     def get_userinfo():
@@ -389,7 +655,7 @@ class Datainfo:
         # 批量下单  Place Multiple Orders
         # 批量下单  Place Multiple Orders
         result = tradeAPI.place_multiple_orders([
-             {'instId': 'ETH-USD-SWAP', 'tdMode': 'cross', 'side': 'buy', 'ordType': 'market', 'sz': '2',
+             {'instId': 'ETH-USD-SWAP', 'tdMode': 'cross', 'side': 'buy', 'ordType': 'market', 'sz': '1',
               'posSide': 'long',
               'clOrdId': 'a12344', 'tag': 'test1210'},
     
@@ -409,11 +675,11 @@ class Datainfo:
 
         # 策略委托下单  Place Algo Order
         result = tradeAPI.place_algo_order('ETH-USD-SWAP', 'cross', 'sell', ordType='conditional',
-                                            sz='2',posSide='long', tpTriggerPx=str(float(lastprice)+50), tpOrdPx=str(float(lastprice)+50))
+                                            sz='1',posSide='long', tpTriggerPx=str(float(lastprice)+50), tpOrdPx=str(float(lastprice)+50))
         #Datainfo.saveinfo(str(datetime.now())+'设置止盈完毕。。。'+str(float(lastprice)+50))
 
 
-        sendtext = str(datetime.now())+'--->>>100倍杠杆，全仓委托：买入ETH-USD-SWAP -->> 2笔，价格是'+str(lastprice)+'，设置止盈完毕。。。'+str(float(lastprice)+50)
+        sendtext = str(datetime.now())+'--->>>100倍杠杆，全仓委托：买入ETH-USD-SWAP -->> 1笔，价格是'+str(lastprice)+'，设置止盈完毕。。。'+str(float(lastprice)+50)
         Datainfo.save_finalinfo(str(datetime.now())+'--->>>我们是守护者，也是一群时刻对抗危险和疯狂的可怜虫 ！^_^     -->>'+sendtext)
         SendDingding.sender(sendtext)
 
@@ -432,7 +698,7 @@ class Datainfo:
         tradeAPI = Trade.TradeAPI(api_key, secret_key, passphrase, False, flag)
         # 批量下单  Place Multiple Orders
         result = tradeAPI.place_order(instId='ETH-USD-SWAP', tdMode='cross', side='sell', posSide='short',
-                              ordType='market', sz='2')
+                              ordType='market', sz='1')
         print(result)
 
         #Datainfo.saveinfo('下单完毕。。。')
@@ -447,11 +713,11 @@ class Datainfo:
 
         # 策略委托下单  Place Algo Order
         result = tradeAPI.place_algo_order('ETH-USD-SWAP', 'cross', 'buy', ordType='conditional',
-                                            sz='2',posSide='short', tpTriggerPx=str(float(lastprice)-50), tpOrdPx=str(float(lastprice)-50))
+                                            sz='1',posSide='short', tpTriggerPx=str(float(lastprice)-50), tpOrdPx=str(float(lastprice)-50))
         #Datainfo.saveinfo(str(datetime.now)+'设置止盈完毕。。。'+str(float(lastprice)-50))
 
 
-        sendtext = str(datetime.now())+'--->>>卖出100倍杠杆，全仓委托：ETH-USD-SWAP -->> 2笔，价格是'+str(lastprice)+'，设置止盈完毕。。。'+str(float(lastprice)-50)
+        sendtext = str(datetime.now())+'--->>>卖出100倍杠杆，全仓委托：ETH-USD-SWAP -->> 1笔，价格是'+str(lastprice)+'，设置止盈完毕。。。'+str(float(lastprice)-50)
         Datainfo.save_finalinfo(str(datetime.now())+'--->>>我们是守护者，也是一群时刻对抗危险和疯狂的可怜虫 ！^_^     -->>'+sendtext)
         SendDingding.sender(sendtext)
 
@@ -626,14 +892,14 @@ class Datainfo:
 
         def okex5M_buy(self):
 
-            scheduler = BlockingScheduler()
-            scheduler.add_job((self.getdatainfo), 'cron', args = ['5'], minute='*/5')
-            print(scheduler.get_jobs())
-            try:
-                scheduler.start()
-            except KeyboardInterrupt:
-                scheduler.shutdown()
-
+            #scheduler = BlockingScheduler()
+            #scheduler.add_job((self.getdatainfo), 'cron', args = ['5'], minute='*/5')
+            #print(scheduler.get_jobs())
+            #try:
+            #    scheduler.start()
+            #except KeyboardInterrupt:
+            #    scheduler.shutdown()
+            self.getdatainfo('5')
         
         def getdatainfo(self,minute):
 
