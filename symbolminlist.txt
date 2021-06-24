@@ -1,0 +1,1 @@
+[btc-usd,eth-usd,ltc-usd,dot-usd,doge-usd,xrp-usd,etc-usd,eos-usd,1inch-usd,ada-usd,atom-usd,algo-usd,bch-usd,bsv-usd,btt-usd,crv-usd,dash-usd,fil-usd,iost-usd,iota-usd,grt-usd,knc-usd,ksn-usd,link-usd,neo-usd,ont-usd,qtum-usd,sushi-usd,theta-usd,trx-usd,uni-usd,xlm-usd,xmr-usd,xtz-usd,yfi-usd,yfii-usd,zec-usd]
