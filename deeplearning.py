@@ -417,6 +417,17 @@ class Datainfo:
         Datainfo.saveinfo('保存所有close数据完毕...')
         print('保存所有close数据完毕...')
 
+        df = pd.read_csv(f'./datas/okex/eth/ethclose.csv')
+        #循环改变第二列数据为eth的值，并且保存          
+        df_id = df['eth']
+        
+        df = df.drop('eth',axis=1)
+        df.insert(1,'eth',df_id)
+        df.to_csv(f'./datas/okex/eth/ethclose.csv',index=False)
+
+        Datainfo.saveinfo('更换eth的列的close数据完毕...')
+        print('更换eth的列的close数据完毕...')
+
     def isbuy(minute):
 
         
@@ -490,8 +501,8 @@ class Datainfo:
         df = pd.read_csv(f'./datas/okex/eth.csv')
         df['timestamps'] = pd.to_datetime(df['timestamps'],unit='ms')+pd.to_timedelta('8 hours')
 
-        buyVolumes = df['buyVolumes'].tail(10).values
-        sellVolumes = df['sellVolumes'].tail(10).values
+        buyVolumes = df['buyVolumes'].tail(5).values
+        sellVolumes = df['sellVolumes'].tail(5).values
 
         print(df)
         print(str(datetime.now())+'--->>>(sum(buyVolumes)/len(buyVolumes)) / (sum(sellVolumes)/len(sellVolumes))的计算结果--->>>',(sum(buyVolumes)/len(buyVolumes)) / (sum(sellVolumes)/len(sellVolumes)))
@@ -515,6 +526,7 @@ class Datainfo:
         #===判断是否买入或者卖出
         print('obv-->>',dw['obv'].tail(1).values ,'MA_obv-->>', dw['maobv'].tail(1).values)
 
+        time.sleep(30)
         #保存所有的close数据
         Datainfo.saveallpart()
 
@@ -892,14 +904,14 @@ class Datainfo:
 
         def okex5M_buy(self):
 
-            #scheduler = BlockingScheduler()
-            #scheduler.add_job((self.getdatainfo), 'cron', args = ['5'], minute='*/5')
-            #print(scheduler.get_jobs())
-            #try:
-            #    scheduler.start()
-            #except KeyboardInterrupt:
-            #    scheduler.shutdown()
-            self.getdatainfo('5')
+            scheduler = BlockingScheduler()
+            scheduler.add_job((self.getdatainfo), 'cron', args = ['5'], minute='*/5')
+            print(scheduler.get_jobs())
+            try:
+                scheduler.start()
+            except KeyboardInterrupt:
+                scheduler.shutdown()
+            #self.getdatainfo('5')
         
         def getdatainfo(self,minute):
 
