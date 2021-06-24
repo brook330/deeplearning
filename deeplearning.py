@@ -522,11 +522,121 @@ class Datainfo:
             try:
                 i = 0
                 #集合所有的close文件
-                for symbol in symbollist:
 
-                    Datainfo.getdatainfo_full(symbol,symbolminlist[i],5)
-                    i+=1
-        
+                p1 = multiprocessing.Process(target = Datainfo.getdatainfo_full,args=[symbollist[0],symbolminlist[0],5])
+                p2 = multiprocessing.Process(target = Datainfo.getdatainfo_full,args=[symbollist[1],symbolminlist[1],5])
+                p3 = multiprocessing.Process(target = Datainfo.getdatainfo_full,args=[symbollist[2],symbolminlist[2],5])
+                p4 = multiprocessing.Process(target = Datainfo.getdatainfo_full,args=[symbollist[3],symbolminlist[3],5])
+                p5 = multiprocessing.Process(target = Datainfo.getdatainfo_full,args=[symbollist[4],symbolminlist[4],5])
+                p6 = multiprocessing.Process(target = Datainfo.getdatainfo_full,args=[symbollist[5],symbolminlist[5],5])
+                p7 = multiprocessing.Process(target = Datainfo.getdatainfo_full,args=[symbollist[6],symbolminlist[6],5])
+                p8 = multiprocessing.Process(target = Datainfo.getdatainfo_full,args=[symbollist[7],symbolminlist[7],5])
+                p9 = multiprocessing.Process(target = Datainfo.getdatainfo_full,args=[symbollist[8],symbolminlist[8],5])
+                p10 = multiprocessing.Process(target = Datainfo.getdatainfo_full,args=[symbollist[9],symbolminlist[9],5])
+                p11 = multiprocessing.Process(target = Datainfo.getdatainfo_full,args=[symbollist[10],symbolminlist[10],5])
+                p12 = multiprocessing.Process(target = Datainfo.getdatainfo_full,args=[symbollist[11],symbolminlist[11],5])
+                p13 = multiprocessing.Process(target = Datainfo.getdatainfo_full,args=[symbollist[12],symbolminlist[12],5])
+                p14 = multiprocessing.Process(target = Datainfo.getdatainfo_full,args=[symbollist[13],symbolminlist[13],5])
+                p15 = multiprocessing.Process(target = Datainfo.getdatainfo_full,args=[symbollist[14],symbolminlist[14],5])
+                p16 = multiprocessing.Process(target = Datainfo.getdatainfo_full,args=[symbollist[15],symbolminlist[15],5])
+                p17 = multiprocessing.Process(target = Datainfo.getdatainfo_full,args=[symbollist[16],symbolminlist[16],5])
+                p18 = multiprocessing.Process(target = Datainfo.getdatainfo_full,args=[symbollist[17],symbolminlist[17],5])
+                p19 = multiprocessing.Process(target = Datainfo.getdatainfo_full,args=[symbollist[18],symbolminlist[18],5])
+                p20 = multiprocessing.Process(target = Datainfo.getdatainfo_full,args=[symbollist[19],symbolminlist[19],5])
+                p21 = multiprocessing.Process(target = Datainfo.getdatainfo_full,args=[symbollist[20],symbolminlist[20],5])
+                p22 = multiprocessing.Process(target = Datainfo.getdatainfo_full,args=[symbollist[21],symbolminlist[21],5])
+                p23 = multiprocessing.Process(target = Datainfo.getdatainfo_full,args=[symbollist[22],symbolminlist[22],5])
+                p24 = multiprocessing.Process(target = Datainfo.getdatainfo_full,args=[symbollist[23],symbolminlist[23],5])
+                p25 = multiprocessing.Process(target = Datainfo.getdatainfo_full,args=[symbollist[24],symbolminlist[24],5])
+                p26 = multiprocessing.Process(target = Datainfo.getdatainfo_full,args=[symbollist[25],symbolminlist[25],5])
+                p27 = multiprocessing.Process(target = Datainfo.getdatainfo_full,args=[symbollist[26],symbolminlist[26],5])
+                p28 = multiprocessing.Process(target = Datainfo.getdatainfo_full,args=[symbollist[27],symbolminlist[27],5])
+                p29 = multiprocessing.Process(target = Datainfo.getdatainfo_full,args=[symbollist[28],symbolminlist[28],5])
+                p30 = multiprocessing.Process(target = Datainfo.getdatainfo_full,args=[symbollist[29],symbolminlist[29],5])
+                p31 = multiprocessing.Process(target = Datainfo.getdatainfo_full,args=[symbollist[30],symbolminlist[30],5])
+                p32 = multiprocessing.Process(target = Datainfo.getdatainfo_full,args=[symbollist[31],symbolminlist[31],5])
+                p33 = multiprocessing.Process(target = Datainfo.getdatainfo_full,args=[symbollist[32],symbolminlist[32],5])
+                p34 = multiprocessing.Process(target = Datainfo.getdatainfo_full,args=[symbollist[33],symbolminlist[33],5])
+                p35 = multiprocessing.Process(target = Datainfo.getdatainfo_full,args=[symbollist[34],symbolminlist[34],5])
+                p36 = multiprocessing.Process(target = Datainfo.getdatainfo_full,args=[symbollist[35],symbolminlist[35],5])
+                p37 = multiprocessing.Process(target = Datainfo.getdatainfo_full,args=[symbollist[36],symbolminlist[36],5])
+  
+                p1.start()
+                p2.start()
+                p3.start()
+                p4.start()
+                p5.start()
+                p6.start()
+                p7.start()
+                p8.start()
+                p9.start()
+                p10.start()
+                p11.start()
+                p12.start()
+                p13.start()
+                p14.start()
+                p15.start()
+                p16.start()
+                p17.start()
+                p18.start()
+                p19.start()
+                p20.start()
+                p21.start()
+                p22.start()
+                p23.start()
+                p24.start()
+                p25.start()
+                p26.start()
+                p27.start()
+                p28.start()
+                p29.start()
+                p30.start()
+                p31.start()
+                p32.start()
+                p33.start()
+                p34.start()
+                p35.start()
+                p36.start()
+                p37.start()
+          
+                p1.join()
+                p2.join()
+                p3.join()
+                p4.join()
+                p5.join()
+                p6.join()
+                p7.join()
+                p8.join()
+                p9.join()
+                p10.join()
+                p11.join()
+                p12.join()
+                p13.join()
+                p14.join()
+                p15.join()
+                p16.join()
+                p17.join()
+                p18.join()
+                p19.join()
+                p20.join()
+                p21.join()
+                p22.join()
+                p23.join()
+                p24.join()
+                p25.join()
+                p26.join()
+                p27.join()
+                p28.join()
+                p29.join()
+                p30.join()
+                p31.join()
+                p32.join()
+                p33.join()
+                p34.join()
+                p35.join()
+                p36.join()
+                p37.join()
+
                 dw = pd.read_csv(f'./datas/okex/symbol/ETH-USD-SWAP.csv')
                 #获取obv参数
                 Datainfo.getfulldata(dw)
@@ -557,7 +667,7 @@ class Datainfo:
                     return '不买卖'
                 break
             except:
-                time.sleep(30)
+                time.sleep(3)
                 continue
 
 
@@ -867,14 +977,14 @@ class Datainfo:
           
 
             f_day = open(f'./datas/log/day_buy.txt',"r",encoding='utf-8')   #设置文件对象
-            day_buy = f_day.read()[-200:]     #将txt文件的所有内容读入到字符串str中
+            day_buy = f_day.read()[-400:]     #将txt文件的所有内容读入到字符串str中
             f_day.close()   #将文件关闭
             if(day_buy):
                 self.textBrowsertwo.clear()
                 self.textBrowsertwo.append(day_buy)
 
             f_info = open(f'./datas/log/infodata.txt',"r",encoding='utf-8')   #设置文件对象
-            infodata = f_info.read()[-200:]     #将txt文件的所有内容读入到字符串str中
+            infodata = f_info.read()[-400:]     #将txt文件的所有内容读入到字符串str中
             f_info.close()   #将文件关闭
             if(infodata):
                 self.textBrowserone.clear()
@@ -916,14 +1026,14 @@ class Datainfo:
 
         def okex5M_buy(self):
 
-            scheduler = BlockingScheduler()
-            scheduler.add_job((self.getdatainfo), 'cron', args = ['5'], minute='*/6')
-            print(scheduler.get_jobs())
-            try:
-                scheduler.start()
-            except KeyboardInterrupt:
-                scheduler.shutdown()
-            #self.getdatainfo('5')
+            #scheduler = BlockingScheduler()
+            #scheduler.add_job((self.getdatainfo), 'cron', args = ['5'], minute='*/6')
+            #print(scheduler.get_jobs())
+            #try:
+            #    scheduler.start()
+            #except KeyboardInterrupt:
+            #    scheduler.shutdown()
+            self.getdatainfo('5')
         
         def getdatainfo(self,minute):
 
