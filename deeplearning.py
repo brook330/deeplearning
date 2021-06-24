@@ -510,8 +510,9 @@ class Datainfo:
         buyVolumes = df['buyVolumes'].tail(20).values
         sellVolumes = df['sellVolumes'].tail(20).values
 
-        print(df)
+        #print(df)
         print(str(datetime.now())+'--->>>(sum(buyVolumes)/len(buyVolumes)) / (sum(sellVolumes)/len(sellVolumes))的计算结果--->>>',(sum(buyVolumes)/len(buyVolumes)) / (sum(sellVolumes)/len(sellVolumes)))
+        Datainfo.save_finalinfo(str(datetime.now())+'--->>>(sum(buyVolumes)/len(buyVolumes)) / (sum(sellVolumes)/len(sellVolumes))的计算结果--->>>'+ str((sum(buyVolumes)/len(buyVolumes)) / (sum(sellVolumes)/len(sellVolumes))))
 
         f_info = open(f'./datas/symbollist.txt',"r",encoding='utf-8')   #设置文件对象
         symbollist = list(eval(f_info.read()))     #将txt文件的所有内容读入到字符串str中
@@ -661,7 +662,7 @@ class Datainfo:
                 dw = pd.read_csv(f'./datas/okex/symbol/ETH-USD-SWAP.csv')
                 #===判断是否买入或者卖出
                 print('obv-->>',dw['obv'].tail(1).values ,'MA_obv-->>', dw['maobv'].tail(1).values)
-
+                Datainfo.save_finalinfo('obv-->>'+str(dw['obv'].tail(1).values )+'MA_obv-->>'+str( dw['maobv'].tail(1).values)+'--计算结果-->>'+str( dw['obv'].tail(1).values >dw['maobv'].tail(1).values))
                 time.sleep(3)
                 #保存所有的close数据
                 Datainfo.saveallpart()
@@ -811,7 +812,7 @@ class Datainfo:
         # 批量下单  Place Multiple Orders
         # 批量下单  Place Multiple Orders
         result = tradeAPI.place_multiple_orders([
-             {'instId': 'ETH-USD-SWAP', 'tdMode': 'cross', 'side': 'buy', 'ordType': 'market', 'sz': '1',
+             {'instId': 'ETH-USD-SWAP', 'tdMode': 'cross', 'side': 'buy', 'ordType': 'market', 'sz': '3',
               'posSide': 'long',
               'clOrdId': 'a12344', 'tag': 'test1210'},
     
@@ -831,11 +832,11 @@ class Datainfo:
 
         # 策略委托下单  Place Algo Order
         result = tradeAPI.place_algo_order('ETH-USD-SWAP', 'cross', 'sell', ordType='conditional',
-                                            sz='1',posSide='long', tpTriggerPx=str(float(lastprice)+50), tpOrdPx=str(float(lastprice)+50))
+                                            sz='3',posSide='long', tpTriggerPx=str(float(lastprice)+50), tpOrdPx=str(float(lastprice)+50))
         #Datainfo.saveinfo(str(datetime.now())+'设置止盈完毕。。。'+str(float(lastprice)+50))
 
 
-        sendtext = str(datetime.now())+'--->>>100倍杠杆，全仓委托：买入ETH-USD-SWAP -->> 1笔，价格是'+str(lastprice)+'，设置止盈完毕。。。'+str(float(lastprice)+50)
+        sendtext = str(datetime.now())+'--->>>100倍杠杆，全仓委托：买入ETH-USD-SWAP -->> 3笔，价格是'+str(lastprice)+'，设置止盈完毕。。。'+str(float(lastprice)+50)
         Datainfo.save_finalinfo(str(datetime.now())+'--->>>我们是守护者，也是一群时刻对抗危险和疯狂的可怜虫 ！^_^     -->>'+sendtext)
         SendDingding.sender(sendtext)
 
@@ -1048,14 +1049,14 @@ class Datainfo:
 
         def okex5M_buy(self):
 
-            scheduler = BlockingScheduler()
-            scheduler.add_job((self.getdatainfo), 'cron', args = ['5'], minute='*/5')
-            print(scheduler.get_jobs())
-            try:
-                scheduler.start()
-            except KeyboardInterrupt:
-                scheduler.shutdown()
-            #self.getdatainfo('5')
+            #scheduler = BlockingScheduler()
+            #scheduler.add_job((self.getdatainfo), 'cron', args = ['5'], minute='*/5')
+            #print(scheduler.get_jobs())
+            #try:
+            #    scheduler.start()
+            #except KeyboardInterrupt:
+            #    scheduler.shutdown()
+            self.getdatainfo('5')
         
         def getdatainfo(self,minute):
 
