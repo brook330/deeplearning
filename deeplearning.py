@@ -1048,14 +1048,14 @@ class Datainfo:
 
         def okex5M_buy(self):
 
-            #scheduler = BlockingScheduler()
-            #scheduler.add_job((self.getdatainfo), 'cron', args = ['5'], minute='*/6')
-            #print(scheduler.get_jobs())
-            #try:
-            #    scheduler.start()
-            #except KeyboardInterrupt:
-            #    scheduler.shutdown()
-            self.getdatainfo('5')
+            scheduler = BlockingScheduler()
+            scheduler.add_job((self.getdatainfo), 'cron', args = ['5'], minute='*/5')
+            print(scheduler.get_jobs())
+            try:
+                scheduler.start()
+            except KeyboardInterrupt:
+                scheduler.shutdown()
+            #self.getdatainfo('5')
         
         def getdatainfo(self,minute):
 
