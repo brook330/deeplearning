@@ -105,24 +105,32 @@ class CsvDataset(data.Dataset):
 
 class Test_CsvDataset(data.Dataset):
 
+    
     def __init__(self, path, step):
-        inputs = []
-        outputs = []
-        time = []
-        with open(path, 'r', encoding='gbk') as (f):
-            f_c = csv.reader(f)
-            idx = 0
-            for row in f_c:
-                if idx == 0:
-                    idx += 1
-                    continue
-                tmp = row[1:]
-                tmp = [float(i) for i in tmp]
-                tmp = [float(i) for i in tmp]
-                time.append(row[:1])
-                outputs.append(tmp.pop(0))
-                inputs.append(tmp)
-                idx += 1
+
+        for i in range(10000):
+            try:
+                inputs = []
+                outputs = []
+                time = []
+                with open(path, 'r', encoding='gbk') as (f):
+                    f_c = csv.reader(f)
+                    idx = 0
+                    for row in f_c:
+                        if idx == 0:
+                            idx += 1
+                            continue
+                        tmp = row[1:]
+                        tmp = [float(i) for i in tmp]
+                        tmp = [float(i) for i in tmp]
+                        time.append(row[:1])
+                        outputs.append(tmp.pop(0))
+                        inputs.append(tmp)
+                        idx += 1
+                break
+            except:
+                time.sleep(30)
+                continue
 
         self.inputs = np.array(inputs)
         self.outputs = np.array(outputs)[:, np.newaxis]
@@ -526,7 +534,7 @@ class Datainfo:
         #===判断是否买入或者卖出
         print('obv-->>',dw['obv'].tail(1).values ,'MA_obv-->>', dw['maobv'].tail(1).values)
 
-        time.sleep(30)
+        time.sleep(3)
         #保存所有的close数据
         Datainfo.saveallpart()
 
@@ -905,7 +913,7 @@ class Datainfo:
         def okex5M_buy(self):
 
             scheduler = BlockingScheduler()
-            scheduler.add_job((self.getdatainfo), 'cron', args = ['5'], minute='*/5')
+            scheduler.add_job((self.getdatainfo), 'cron', args = ['5'], minute='*/6')
             print(scheduler.get_jobs())
             try:
                 scheduler.start()
