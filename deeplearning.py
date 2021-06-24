@@ -507,8 +507,8 @@ class Datainfo:
         df = pd.read_csv(f'./datas/okex/eth.csv')
         df['timestamps'] = pd.to_datetime(df['timestamps'],unit='ms')+pd.to_timedelta('8 hours')
 
-        buyVolumes = df['buyVolumes'].tail(5).values
-        sellVolumes = df['sellVolumes'].tail(5).values
+        buyVolumes = df['buyVolumes'].tail(20).values
+        sellVolumes = df['sellVolumes'].tail(20).values
 
         print(df)
         print(str(datetime.now())+'--->>>(sum(buyVolumes)/len(buyVolumes)) / (sum(sellVolumes)/len(sellVolumes))的计算结果--->>>',(sum(buyVolumes)/len(buyVolumes)) / (sum(sellVolumes)/len(sellVolumes)))
@@ -570,35 +570,8 @@ class Datainfo:
                 p7.start()
                 p8.start()
                 p9.start()
-                p10.start()
-                p11.start()
-                p12.start()
-                p13.start()
-                p14.start()
-                p15.start()
-                p16.start()
-                p17.start()
-                p18.start()
-                p19.start()
-                p20.start()
-                p21.start()
-                p22.start()
-                p23.start()
-                p24.start()
-                p25.start()
-                p26.start()
-                p27.start()
-                p28.start()
-                p29.start()
-                p30.start()
-                p31.start()
-                p32.start()
-                p33.start()
-                p34.start()
-                p35.start()
-                p36.start()
-                p37.start()
-          
+                p10.start() 
+
                 p1.join()
                 p2.join()
                 p3.join()
@@ -609,6 +582,21 @@ class Datainfo:
                 p8.join()
                 p9.join()
                 p10.join()
+
+                time.sleep(1)
+
+                p11.start()
+                p12.start()
+                p13.start()
+                p14.start()
+                p15.start()
+                p16.start()
+                p17.start()
+                p18.start()
+                p19.start()
+                p20.start()
+
+
                 p11.join()
                 p12.join()
                 p13.join()
@@ -619,6 +607,20 @@ class Datainfo:
                 p18.join()
                 p19.join()
                 p20.join()
+
+                time.sleep(1)
+
+                p21.start()
+                p22.start()
+                p23.start()
+                p24.start()
+                p25.start()
+                p26.start()
+                p27.start()
+                p28.start()
+                p29.start()
+                p30.start()
+
                 p21.join()
                 p22.join()
                 p23.join()
@@ -629,6 +631,20 @@ class Datainfo:
                 p28.join()
                 p29.join()
                 p30.join()
+
+                time.sleep(1)
+
+                p31.start()
+                p32.start()
+                p33.start()
+                p34.start()
+                p35.start()
+                p36.start()
+                p37.start()
+          
+                
+                
+                
                 p31.join()
                 p32.join()
                 p33.join()
@@ -636,6 +652,8 @@ class Datainfo:
                 p35.join()
                 p36.join()
                 p37.join()
+
+                time.sleep(2)
 
                 dw = pd.read_csv(f'./datas/okex/symbol/ETH-USD-SWAP.csv')
                 #获取obv参数
@@ -648,9 +666,13 @@ class Datainfo:
                 #保存所有的close数据
                 Datainfo.saveallpart()
 
+                time.sleep(1)
+
                 #人工智能计算结果
                 learning = Datainfo.getnextdata()
                 print('learning--->>>',learning)
+
+                time.sleep(1)
 
                 if((sum(buyVolumes)/len(buyVolumes)) /(sum(sellVolumes)/len(sellVolumes)) > 1.01 and dw['obv'].tail(1).values > dw['maobv'].tail(1).values and learning == '买入'):
                     print('买入')
