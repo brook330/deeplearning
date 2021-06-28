@@ -18,7 +18,7 @@ import base64
 import urllib.parse
 import requests as  r
 import json
-import numpy
+import numpy as np
 import time
 import shutil
 from pathlib import Path
@@ -38,6 +38,7 @@ import okex.subAccount_api as SubAccount
 import okex.status_api as Status
 import statsmodels.api as sm
 import statsmodels.formula.api as smf
+import math
 
 
 
@@ -51,153 +52,160 @@ class DateEncoder(json.JSONEncoder):
 
 class Datainfo:
 
-    def btc_isbuy(minute):
+    #def btc_isbuy(minute):
 
         
-        #Datainfo.saveinfo('开始获取是否可以买入ismarket。。。')
+    #    #Datainfo.saveinfo('开始获取是否可以买入ismarket。。。')
 
-        # api_key,secret_key,passphrase,flag = Datainfo.get_userinfo()
+    #    # api_key,secret_key,passphrase,flag = Datainfo.get_userinfo()
 
-        # #判断订单是否大于5单，大于则不买入
-        # #trade api
-        # tradeAPI = Trade.TradeAPI(api_key, secret_key, passphrase, False, flag)
-        # list_string_buy = ['buy']
-        # list_string_sell = ['sell']
-        # list_text = list(pd.DataFrame(eval(str(tradeAPI.get_fills()))['data'])['side'].head(100).values)
-        # all_words_buy = list(filter(lambda text: all([word in text for word in list_string_buy]), list_text ))
-        # all_words_sell = list(filter(lambda text: all([word in text for word in list_string_sell]), list_text ))
-        # Datainfo.saveinfo('总计：--->>>'+str(len(all_words_buy) - len(all_words_sell))+' 单 。。。>>>')
-        # print('总计：--->>>',len(all_words_buy) - len(all_words_sell),' 单 。。。>>>')
-        # if(len(all_words_buy) - len(all_words_sell)>1000):
-            # Datainfo.saveinfo('买单大于60单返回。。。>>>')
+    #    # #判断订单是否大于5单，大于则不买入
+    #    # #trade api
+    #    # tradeAPI = Trade.TradeAPI(api_key, secret_key, passphrase, False, flag)
+    #    # list_string_buy = ['buy']
+    #    # list_string_sell = ['sell']
+    #    # list_text = list(pd.DataFrame(eval(str(tradeAPI.get_fills()))['data'])['side'].head(100).values)
+    #    # all_words_buy = list(filter(lambda text: all([word in text for word in list_string_buy]), list_text ))
+    #    # all_words_sell = list(filter(lambda text: all([word in text for word in list_string_sell]), list_text ))
+    #    # Datainfo.saveinfo('总计：--->>>'+str(len(all_words_buy) - len(all_words_sell))+' 单 。。。>>>')
+    #    # print('总计：--->>>',len(all_words_buy) - len(all_words_sell),' 单 。。。>>>')
+    #    # if(len(all_words_buy) - len(all_words_sell)>1000):
+    #        # Datainfo.saveinfo('买单大于60单返回。。。>>>')
             
-            # return '30单'
+    #        # return '30单'
 
-        # if(len(all_words_buy) < len(all_words_sell) - 1000):
-            # Datainfo.saveinfo('买单小于卖单返回。。。>>>')
-            # return '买单小于卖单'
+    #    # if(len(all_words_buy) < len(all_words_sell) - 1000):
+    #        # Datainfo.saveinfo('买单小于卖单返回。。。>>>')
+    #        # return '买单小于卖单'
 
-        t = time.time()
+    #    t = time.time()
 
-        #print (t)                       #原始时间数据
-        #print (int(t))                  #秒级时间戳
-        #print (int(round(t * 1000)))    #毫秒级时间戳
-        #print (int(round(t * 1000000))) #微秒级时间戳
-        tt = str((int(t * 1000)))
-        ttt = str(int(round(t * 1000)))
+    #    #print (t)                       #原始时间数据
+    #    #print (int(t))                  #秒级时间戳
+    #    #print (int(round(t * 1000)))    #毫秒级时间戳
+    #    #print (int(round(t * 1000000))) #微秒级时间戳
+    #    tt = str((int(t * 1000)))
+    #    ttt = str(int(round(t * 1000)))
 
-        #=====获取vol数据
-        headers = {
-            'authority': 'www.okex.com',
-            'sec-ch-ua': '^\\^',
-            'timeout': '10000',
-            'x-cdn': 'https://static.okex.com',
-            'devid': '7f1dea77-90cd-4746-a13f-a98bac4a333b',
-            'accept-language': 'zh-CN',
-            'sec-ch-ua-mobile': '?0',
-            'user-agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.77 Safari/537.36',
-            'accept': 'application/json',
-            'x-utc': '8',
-            'app-type': 'web',
-            'sec-fetch-site': 'same-origin',
-            'sec-fetch-mode': 'cors',
-            'sec-fetch-dest': 'empty',
-            'referer': 'https://www.okex.com/markets/swap-data/btc-usd',
-            'cookie': '_gcl_au=1.1.1849415495.'+str(tt)+'; _ga=GA1.2.1506507962.'+str(tt)+'; first_ref=https^%^3A^%^2F^%^2Fwww.okex.com^%^2Fcaptcha^%^3Fto^%^3DaHR0cHM6Ly93d3cub2tleC5jb20vbWFya2V0cy9zd2FwLWRhdGEvZXRoLXVzZA^%^3D^%^3D; locale=zh_CN; _gid=GA1.2.802198982.'+str(tt)+'; amp_56bf9d=gqC_GMDGl4q5Tk-BJhT-oP...1f8fiso4n.1f8fiu841.1.2.3',
-        }
+    #    #=====获取vol数据
+    #    headers = {
+    #        'authority': 'www.okex.com',
+    #        'sec-ch-ua': '^\\^',
+    #        'timeout': '10000',
+    #        'x-cdn': 'https://static.okex.com',
+    #        'devid': '7f1dea77-90cd-4746-a13f-a98bac4a333b',
+    #        'accept-language': 'zh-CN',
+    #        'sec-ch-ua-mobile': '?0',
+    #        'user-agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.77 Safari/537.36',
+    #        'accept': 'application/json',
+    #        'x-utc': '8',
+    #        'app-type': 'web',
+    #        'sec-fetch-site': 'same-origin',
+    #        'sec-fetch-mode': 'cors',
+    #        'sec-fetch-dest': 'empty',
+    #        'referer': 'https://www.okex.com/markets/swap-data/btc-usd',
+    #        'cookie': '_gcl_au=1.1.1849415495.'+str(tt)+'; _ga=GA1.2.1506507962.'+str(tt)+'; first_ref=https^%^3A^%^2F^%^2Fwww.okex.com^%^2Fcaptcha^%^3Fto^%^3DaHR0cHM6Ly93d3cub2tleC5jb20vbWFya2V0cy9zd2FwLWRhdGEvZXRoLXVzZA^%^3D^%^3D; locale=zh_CN; _gid=GA1.2.802198982.'+str(tt)+'; amp_56bf9d=gqC_GMDGl4q5Tk-BJhT-oP...1f8fiso4n.1f8fiu841.1.2.3',
+    #    }
 
-        params = (
-            ('t', str(ttt)),
-            ('unitType', '0'),
-        )
+    #    params = (
+    #        ('t', str(ttt)),
+    #        ('unitType', '0'),
+    #    )
 
-        response = r.get('https://www.okex.com/v3/futures/pc/market/takerTradeVolume/BTC', headers=headers, params=params)
+    #    response = r.get('https://www.okex.com/v3/futures/pc/market/takerTradeVolume/BTC', headers=headers, params=params)
 
-        if response.cookies.get_dict(): #保持cookie有效 
-                s=r.session()
-                c = r.cookies.RequestsCookieJar()#定义一个cookie对象
-                c.set('cookie-name', 'cookie-value')#增加cookie的值
-                s.cookies.update(c)#更新s的cookie
-                s.get(url = 'https://www.okex.com/v3/futures/pc/market/takerTradeVolume/BTC?t='+str(ttt)+'&unitType=0')
-        df = pd.DataFrame(response.json()['data'])
-        df.to_csv(f'./datas/okex/btc.csv',index=False)
-        df = pd.read_csv(f'./datas/okex/btc.csv')
-        df['timestamps'] = pd.to_datetime(df['timestamps'],unit='ms')+pd.to_timedelta('8 hours')
+    #    if response.cookies.get_dict(): #保持cookie有效 
+    #            s=r.session()
+    #            c = r.cookies.RequestsCookieJar()#定义一个cookie对象
+    #            c.set('cookie-name', 'cookie-value')#增加cookie的值
+    #            s.cookies.update(c)#更新s的cookie
+    #            s.get(url = 'https://www.okex.com/v3/futures/pc/market/takerTradeVolume/BTC?t='+str(ttt)+'&unitType=0')
+    #    df = pd.DataFrame(response.json()['data'])
+    #    df.to_csv(f'./datas/okex/btc.csv',index=False)
+    #    df = pd.read_csv(f'./datas/okex/btc.csv')
+    #    df['timestamps'] = pd.to_datetime(df['timestamps'],unit='ms')+pd.to_timedelta('8 hours')
 
-        buyVolumes = df['buyVolumes'].tail(10).values
-        sellVolumes = df['sellVolumes'].tail(10).values
+    #    buyVolumes = df['buyVolumes'].tail(10).values
+    #    sellVolumes = df['sellVolumes'].tail(10).values
 
-        print(df)
-        print(str(datetime.now())+'--->>>(sum(buyVolumes)/len(buyVolumes)) / (sum(sellVolumes)/len(sellVolumes))的计算结果--->>>',(sum(buyVolumes)/len(buyVolumes)) / (sum(sellVolumes)/len(sellVolumes)))
+    #    print(df)
+    #    print(str(datetime.now())+'--->>>(sum(buyVolumes)/len(buyVolumes)) / (sum(sellVolumes)/len(sellVolumes))的计算结果--->>>',(sum(buyVolumes)/len(buyVolumes)) / (sum(sellVolumes)/len(sellVolumes)))
 
-        #===获取close数据
-        headers = {
-        'authority': 'www.okex.com',
-        'sec-ch-ua': '^\\^',
-        'timeout': '10000',
-        'x-cdn': 'https://static.okex.com',
-        'devid': '7f1dea77-90cd-4746-a13f-a98bac4a333b',
-        'accept-language': 'zh-CN',
-        'sec-ch-ua-mobile': '?0',
-        'user-agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.77 Safari/537.36',
-        'accept': 'application/json',
-        'x-utc': '8',
-        'app-type': 'web',
-        'sec-fetch-site': 'same-origin',
-        'sec-fetch-mode': 'cors',
-        'sec-fetch-dest': 'empty',
-        'referer': 'https://www.okex.com/markets/swap-info/eth-usd',
-        'cookie': 'locale=zh_CN; _gcl_au=1.1.1849415495.'+str(tt)+'; _ga=GA1.2.1506507962.'+str(tt)+'; _gid=GA1.2.256681666.'+str(tt)+'; first_ref=https^%^3A^%^2F^%^2Fwww.okex.com^%^2Fcaptcha^%^3Fto^%^3DaHR0cHM6Ly93d3cub2tleC5jb20vbWFya2V0cy9zd2FwLWRhdGEvZXRoLXVzZA^%^3D^%^3D; _gat_UA-35324627-3=1; amp_56bf9d=gqC_GMDGl4q5Tk-BJhT-oP...1f711b989.1f711fv58.0.2.2',
-        }
+    #    #===获取close数据
+    #    headers = {
+    #    'authority': 'www.okex.com',
+    #    'sec-ch-ua': '^\\^',
+    #    'timeout': '10000',
+    #    'x-cdn': 'https://static.okex.com',
+    #    'devid': '7f1dea77-90cd-4746-a13f-a98bac4a333b',
+    #    'accept-language': 'zh-CN',
+    #    'sec-ch-ua-mobile': '?0',
+    #    'user-agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.77 Safari/537.36',
+    #    'accept': 'application/json',
+    #    'x-utc': '8',
+    #    'app-type': 'web',
+    #    'sec-fetch-site': 'same-origin',
+    #    'sec-fetch-mode': 'cors',
+    #    'sec-fetch-dest': 'empty',
+    #    'referer': 'https://www.okex.com/markets/swap-info/btc-usd',
+    #    'cookie': 'locale=zh_CN; _gcl_au=1.1.1849415495.'+str(tt)+'; _ga=GA1.2.1506507962.'+str(tt)+'; _gid=GA1.2.256681666.'+str(tt)+'; first_ref=https^%^3A^%^2F^%^2Fwww.okex.com^%^2Fcaptcha^%^3Fto^%^3DaHR0cHM6Ly93d3cub2tleC5jb20vbWFya2V0cy9zd2FwLWRhdGEvZXRoLXVzZA^%^3D^%^3D; _gat_UA-35324627-3=1; amp_56bf9d=gqC_GMDGl4q5Tk-BJhT-oP...1f711b989.1f711fv58.0.2.2',
+    #    }
 
-        params = (
-        ('granularity', str(int(minute)*60)),
-        ('size', '1000'),
-        ('t', str(ttt)),
-        )
-        response = r.get('https://www.okex.com/v2/perpetual/pc/public/instruments/BTC-USD-SWAP/candles', headers=headers, params=params)
+    #    params = (
+    #    ('granularity', str(int(minute)*60)),
+    #    ('size', '1000'),
+    #    ('t', str(ttt)),
+    #    )
+    #    response = r.get('https://www.okex.com/v2/perpetual/pc/public/instruments/BTC-USD-SWAP/candles', headers=headers, params=params)
 
-        if response.cookies.get_dict(): #保持cookie有效 
-                s=r.session()
-                c = r.cookies.RequestsCookieJar()#定义一个cookie对象
-                c.set('cookie-name', 'cookie-value')#增加cookie的值
-                s.cookies.update(c)#更新s的cookie
-                s.get(url = 'https://www.okex.com/v2/perpetual/pc/public/instruments/BTC-USD-SWAP/candles?granularity=900&size=1000&t='+str(ttt))
-        dw = pd.DataFrame(eval(json.dumps(response.json()))['data'])
-        #print(df)
-        dw.columns = ['timestamps','open','high','low','close','vol','p']
-        datelist = []
-        for timestamp in dw['timestamps']:
-            datelist.append(timestamp.split('.000Z')[0].replace('T',' '))
-        dw['timestamps'] = datelist
-        dw['timestamps'] = pd.to_datetime(dw['timestamps'])+pd.to_timedelta('8 hours')
-        #df['timestamps'] = df['timestamps'].apply(lambda x:time.mktime(time.strptime(str(x),'%Y-%m-%d %H:%M:%S')))
-        #print(dw)
-        dw['vol'] = list(map(float, dw['vol'].values))
-        dw.to_csv(f'./datas/okex/btc/close.csv',index = False)
-        dw = pd.read_csv(f'./datas/okex/btc/close.csv')
-        Datainfo.getfulldata(dw,'btc')
-        dw = pd.read_csv(f'./datas/okex/btc/close.csv')
-        #===判断是否买入或者卖出
-        print('obv-->>',dw['obv'].tail(1).values ,'MA_obv-->>', dw['maobv'].tail(1).values)
+    #    if response.cookies.get_dict(): #保持cookie有效 
+    #            s=r.session()
+    #            c = r.cookies.RequestsCookieJar()#定义一个cookie对象
+    #            c.set('cookie-name', 'cookie-value')#增加cookie的值
+    #            s.cookies.update(c)#更新s的cookie
+    #            s.get(url = 'https://www.okex.com/v2/perpetual/pc/public/instruments/BTC-USD-SWAP/candles?granularity=900&size=1000&t='+str(ttt))
+    #    dw = pd.DataFrame(eval(json.dumps(response.json()))['data'])
+    #    #print(df)
+    #    dw.columns = ['timestamps','open','high','low','close','vol','p']
+    #    datelist = []
+    #    for timestamp in dw['timestamps']:
+    #        datelist.append(timestamp.split('.000Z')[0].replace('T',' '))
+    #    dw['timestamps'] = datelist
+    #    dw['timestamps'] = pd.to_datetime(dw['timestamps'])+pd.to_timedelta('8 hours')
+    #    #df['timestamps'] = df['timestamps'].apply(lambda x:time.mktime(time.strptime(str(x),'%Y-%m-%d %H:%M:%S')))
+    #    #print(dw)
+    #    dw['vol'] = list(map(float, dw['vol'].values))
+    #    dw.to_csv(f'./datas/okex/btc/close.csv',index = False)
+    #    dw = pd.read_csv(f'./datas/okex/btc/close.csv')
+    #    Datainfo.getfulldata(dw,'btc')
+    #    dw = pd.read_csv(f'./datas/okex/btc/close.csv')
+    #    #===判断是否买入或者卖出
+    #    #print('obv-->>',dw['obv'].tail(1).values ,'MA_obv-->>', dw['maobv'].tail(1).values)
 
-        #人工智能计算结果
-        learning = Datainfo.getnextdata(dw,'BTC-USD-SWAP')
-        print('learning--->>>',learning)
+    #    #MATRIX角>20度，【ATAN("TRIX.MATRIX"/REF("TRIX.MATRIX",1)-1)*180/3.1416>=20 AND "TRIX.MATRIX">REF("TRIX.MATRIX",1);
+    #    b = math.atan((dw['TRIX'].tail(1).values[0]*dw['MATRIX'].tail(1).values[0])/(dw['MATRIX'].values[-2]*dw['TRIX'].values[-2])-1)
+    #    mb = math.atan((dw['MATRIX'].values[-2]*dw['TRIX'].values[-2])/(dw['TRIX'].tail(1).values[0]*dw['MATRIX'].tail(1).values[0])-1)
+    #    MATRIX = b/math.pi*720 >=20 and dw['MATRIX'].tail(1).values > dw['MATRIX'].values[-2] 
+    #    F_MATRIX = mb/math.pi*720 >=20 and dw['MATRIX'].tail(1).values < dw['MATRIX'].values[-2] 
+    #    #人工智能计算结果
+    #    learning = Datainfo.getnextdata(dw,'BTC-USD-SWAP')
+    #    print('learning--->>>',learning)
 
-        if((sum(buyVolumes)/len(buyVolumes)) /(sum(sellVolumes)/len(sellVolumes)) > 1.01 and dw['obv'].tail(1).values > dw['maobv'].tail(1).values and learning):
-            print('BTC买入')
-            sendtext = 'BTC获取数据完毕。。。   判断为： -->>True-->>>  '+str(minute)+'分钟--->>>buyVolumes-->>'+str(df['buyVolumes'].values[-1])+'--->>>sellVolumes-->>'+str(df['sellVolumes'].values[-1])+'  ,预测结果-->>正确   -->>我们是守护者，也是一群时刻对抗危险和疯狂的可怜虫 ！^_^'
-            Datainfo.saveinfo(sendtext)
-            return '买入'
-        elif((sum(buyVolumes)/len(buyVolumes)) /(sum(sellVolumes)/len(sellVolumes)) < 0.99 and dw['obv'].tail(1).values < dw['maobv'].tail(1).values and (not learning)):
-            print('BTC卖出')
-            sendtext = 'BTC获取数据完毕。。。   判断为： -->>True-->>>  '+str(minute)+'分钟--->>>buyVolumes-->>'+str(df['buyVolumes'].values[-1])+'--->>>sellVolumes-->>'+str(df['sellVolumes'].values[-1])+'  ,预测结果-->>正确   -->>我们是守护者，也是一群时刻对抗危险和疯狂的可怜虫 ！^_^'
-            Datainfo.saveinfo(sendtext)
-            return '卖出'
-        else:
-            print('不买卖')
-            return '不买卖'
+    #    Datainfo.saveinfo('BTC-USD-SWAP--->>>MATRIX--->>>'+str(MATRIX)+str(b/math.pi*720 )+',F_MATRIX--->>>'+str(F_MATRIX)+str(mb/math.pi*720 )+'MATRIX-->>'+str(dw['MATRIX'].tail(1).values) +'REF--MATRIX-->>'+str(dw['MATRIX'].values[-2]) +'--->>>,buyVolumes的计算结果--->>>'+str((sum(buyVolumes)/len(buyVolumes)) / (sum(sellVolumes)/len(sellVolumes)))+',obv-->>'+str(dw['obv'].tail(1).values)+ ',MA_obv-->>'+str(dw['maobv'].tail(1).values)+',learning--->>>'+str(learning))
+
+    #    if((sum(buyVolumes)/len(buyVolumes)) /(sum(sellVolumes)/len(sellVolumes)) > 1.01 and dw['obv'].tail(1).values > dw['maobv'].tail(1).values and learning and bool(MATRIX)):
+    #        print('买入')
+    #        sendtext = 'BTC-USD-SWAP--->>>获取数据完毕。。。   判断为： -->>True-->>>  '+str(minute)+'分钟--->>>buyVolumes-->>'+str(df['buyVolumes'].values[-1])+'--->>>sellVolumes-->>'+str(df['sellVolumes'].values[-1])+'  ,预测结果-->>正确   -->>我们是守护者，也是一群时刻对抗危险和疯狂的可怜虫 ！^_^'
+    #        Datainfo.saveinfo(sendtext)
+    #        return '买入'
+    #    elif((sum(buyVolumes)/len(buyVolumes)) /(sum(sellVolumes)/len(sellVolumes)) < 0.99 and dw['obv'].tail(1).values < dw['maobv'].tail(1).values and (not learning) and bool(F_MATRIX)):
+    #        print('卖出')
+    #        sendtext = 'BTC-USD-SWAP--->>>获取数据完毕。。。   判断为： -->>True-->>>  '+str(minute)+'分钟--->>>buyVolumes-->>'+str(df['buyVolumes'].values[-1])+'--->>>sellVolumes-->>'+str(df['sellVolumes'].values[-1])+'  ,预测结果-->>正确   -->>我们是守护者，也是一群时刻对抗危险和疯狂的可怜虫 ！^_^'
+    #        Datainfo.saveinfo(sendtext)
+    #        return '卖出'
+    #    else:
+    #        print('不买卖')
+    #        return '不买卖'
 
     def eth_isbuy(minute):
 
@@ -327,20 +335,27 @@ class Datainfo:
         Datainfo.getfulldata(dw,'eth')
         dw = pd.read_csv(f'./datas/okex/eth/close.csv')
         #===判断是否买入或者卖出
-        print('obv-->>',dw['obv'].tail(1).values ,'MA_obv-->>', dw['maobv'].tail(1).values)
+        #print('obv-->>',dw['obv'].tail(1).values ,'MA_obv-->>', dw['maobv'].tail(1).values)
 
+        #MATRIX角>20度，【ATAN("TRIX.MATRIX"/REF("TRIX.MATRIX",1)-1)*180/3.1416>=20 AND "TRIX.MATRIX">REF("TRIX.MATRIX",1);
+        b = math.atan((dw['TRIX'].tail(1).values[0]*dw['MATRIX'].tail(1).values[0])/(dw['MATRIX'].values[-2]*dw['TRIX'].values[-2])-1)
+        mb = math.atan((dw['MATRIX'].values[-2]*dw['TRIX'].values[-2])/(dw['TRIX'].tail(1).values[0]*dw['MATRIX'].tail(1).values[0])-1)
+        MATRIX = b/math.pi*720 >=20 and dw['MATRIX'].tail(1).values > dw['MATRIX'].values[-2] 
+        F_MATRIX = mb/math.pi*720 >=20 and dw['MATRIX'].tail(1).values < dw['MATRIX'].values[-2] 
         #人工智能计算结果
         learning = Datainfo.getnextdata(dw,'ETH-USD-SWAP')
         print('learning--->>>',learning)
 
-        if((sum(buyVolumes)/len(buyVolumes)) /(sum(sellVolumes)/len(sellVolumes)) > 1.01 and dw['obv'].tail(1).values > dw['maobv'].tail(1).values and learning):
+        Datainfo.saveinfo('ETH-USD-SWAP--->>>MATRIX--->>>'+str(MATRIX)+str(b/math.pi*720 )+',F_MATRIX--->>>'+str(F_MATRIX)+str(mb/math.pi*720 )+'MATRIX-->>'+str(dw['MATRIX'].tail(1).values) +'REF--MATRIX-->>'+str(dw['MATRIX'].values[-2])+'--->>>,buyVolumes的计算结果--->>>'+str((sum(buyVolumes)/len(buyVolumes)) / (sum(sellVolumes)/len(sellVolumes)))+',learning--->>>'+str(learning))
+
+        if((sum(buyVolumes)/len(buyVolumes)) /(sum(sellVolumes)/len(sellVolumes)) > 1.01 and learning and bool(MATRIX)):
             print('买入')
-            sendtext = '获取数据完毕。。。   判断为： -->>True-->>>  '+str(minute)+'分钟--->>>buyVolumes-->>'+str(df['buyVolumes'].values[-1])+'--->>>sellVolumes-->>'+str(df['sellVolumes'].values[-1])+'  ,预测结果-->>正确   -->>我们是守护者，也是一群时刻对抗危险和疯狂的可怜虫 ！^_^'
+            sendtext = 'ETH-USD-SWAP获取数据完毕。。。   判断为： -->>True-->>>  '+str(minute)+'分钟--->>>buyVolumes-->>'+str(df['buyVolumes'].values[-1])+'--->>>sellVolumes-->>'+str(df['sellVolumes'].values[-1])+'  ,预测结果-->>正确   -->>我们是守护者，也是一群时刻对抗危险和疯狂的可怜虫 ！^_^'
             Datainfo.saveinfo(sendtext)
             return '买入'
-        elif((sum(buyVolumes)/len(buyVolumes)) /(sum(sellVolumes)/len(sellVolumes)) < 0.99 and dw['obv'].tail(1).values < dw['maobv'].tail(1).values and (not learning)):
+        elif((sum(buyVolumes)/len(buyVolumes)) /(sum(sellVolumes)/len(sellVolumes)) < 0.99  and (not learning) and bool(F_MATRIX)):
             print('卖出')
-            sendtext = '获取数据完毕。。。   判断为： -->>True-->>>  '+str(minute)+'分钟--->>>buyVolumes-->>'+str(df['buyVolumes'].values[-1])+'--->>>sellVolumes-->>'+str(df['sellVolumes'].values[-1])+'  ,预测结果-->>正确   -->>我们是守护者，也是一群时刻对抗危险和疯狂的可怜虫 ！^_^'
+            sendtext = 'ETH-USD-SWAP获取数据完毕。。。   判断为： -->>True-->>>  '+str(minute)+'分钟--->>>buyVolumes-->>'+str(df['buyVolumes'].values[-1])+'--->>>sellVolumes-->>'+str(df['sellVolumes'].values[-1])+'  ,预测结果-->>正确   -->>我们是守护者，也是一群时刻对抗危险和疯狂的可怜虫 ！^_^'
             Datainfo.saveinfo(sendtext)
             return '卖出'
         else:
@@ -352,25 +367,7 @@ class Datainfo:
 
 
         #获取参数历史数据
-        df['will'] = ta.WILLR(df['high'].values,df['low'].values,df['close'].values,timeperiod=14)
-        df['upper'], df['middle'], df['lower'] = ta.BBANDS(
-                        df.close.values,
-                        timeperiod=20,
-                        # number of non-biased standard deviations from the mean
-                        nbdevup=2,
-                        nbdevdn=2,
-                        # Moving average type: simple moving average here
-                        matype=0)
-        df["rsi"] = ta.RSI(df['close'], timeperiod=14)
-        df['slowk'], df['slowd'] = ta.STOCH(df['high'].values,
-                                df['low'].values,
-                                df['close'].values,
-                                fastk_period=9,
-                                slowk_period=3,
-                                slowk_matype=0,
-                                slowd_period=3,
-                                slowd_matype=0)
-        df["DEMA"] = ta.DEMA(df['close'].values, timeperiod=30)
+        
         # MA - Moving average 移动平均线
         # 函数名：MA
         # 名称： 移动平均线
@@ -380,16 +377,11 @@ class Datainfo:
         # EMA和MACD
         df['obv'] = ta.OBV(df['close'].values,df['vol'].values)
         df['maobv'] = ta.MA(df['obv'].values, timeperiod=30, matype=0)
-        df["MACD_macd"],df["MACD_macdsignal"],df["MACD_macdhist"] = ta.MACD(df['close'].values, fastperiod=12, slowperiod=26, signalperiod=60)
-        df['macd'] = 2*(df["MACD_macd"]-df["MACD_macdsignal"])
-        df['upper'], df['middle'], df['lower'] = ta.BBANDS(
-                    df.close.values,
-                    timeperiod=26,
-                    # number of non-biased standard deviations from the mean
-                    nbdevup=2,
-                    nbdevdn=2,
-                    # Moving average type: simple moving average here
-                    matype=0)
+
+        df['TRIX'] = ta.TRIX(np.array(df['close'].values), timeperiod=14)
+        df['MATRIX'] = ta.MA(df['TRIX'].values, timeperiod=30, matype=0)
+
+        
         df.to_csv(f'./datas/okex/'+symbol+'/close.csv',index = False)
 
      #数据清洗
@@ -434,7 +426,6 @@ class Datainfo:
         
         f_info = "\n开始获取是否"+symbol+"买入信号 SVM人工智能运算"
         print(f_info)
-        Datainfo.saveinfo(f_info)
         #运行主函数
         Datainfo.main(df)
         #获取close值
@@ -478,7 +469,6 @@ class Datainfo:
 
         #获取预期下个整点的值
         print(df2['Predicted Next Close'].tail(1).values[0] > df2['Current Close'].tail(1).values[0])
-        Datainfo.saveinfo(df2['Predicted Next Close'].tail(1).values[0] > df2['Current Close'].tail(1).values[0])
         print(df2.tail(5))
         return df2['Predicted Next Close'].tail(1).values[0] > df2['Current Close'].tail(1).values[0]
 
@@ -559,8 +549,8 @@ class Datainfo:
         #Datainfo.saveinfo(str(datetime.now())+'设置止盈完毕。。。'+str(float(lastprice)+50))
 
 
-        sendtext = str(datetime.now())+'--->>>100倍杠杆，全仓委托：买入ETH-USD-SWAP -->> 2笔，价格是'+str(lastprice)+'，设置止盈完毕。。。'+str(float(lastprice)+50)
-        Datainfo.save_finalinfo(str(datetime.now())+'--->>>我们是守护者，也是一群时刻对抗危险和疯狂的可怜虫 ！^_^     -->>'+sendtext)
+        sendtext = '--->>>100倍杠杆，全仓委托：买入ETH-USD-SWAP -->> 2笔，价格是'+str(lastprice)+'，设置止盈完毕。。。'+str(float(lastprice)+50)
+        Datainfo.save_finalinfo('--->>>我们是守护者，也是一群时刻对抗危险和疯狂的可怜虫 ！^_^     -->>'+sendtext)
         SendDingding.sender(sendtext)
 
     #设置自动下单
@@ -597,8 +587,8 @@ class Datainfo:
         #Datainfo.saveinfo(str(datetime.now)+'设置止盈完毕。。。'+str(float(lastprice)-50))
 
 
-        sendtext = str(datetime.now())+'--->>>卖出100倍杠杆，全仓委托：ETH-USD-SWAP -->> 2笔，价格是'+str(lastprice)+'，设置止盈完毕。。。'+str(float(lastprice)-50)
-        Datainfo.save_finalinfo(str(datetime.now())+'--->>>我们是守护者，也是一群时刻对抗危险和疯狂的可怜虫 ！^_^     -->>'+sendtext)
+        sendtext = str('--->>>卖出100倍杠杆，全仓委托：ETH-USD-SWAP -->> 2笔，价格是'+str(lastprice)+'，设置止盈完毕。。。'+str(float(lastprice)-50))
+        Datainfo.save_finalinfo('--->>>我们是守护者，也是一群时刻对抗危险和疯狂的可怜虫 ！^_^     -->>'+sendtext)
         SendDingding.sender(sendtext)
 
     #查询最新价格
@@ -723,14 +713,14 @@ class Datainfo:
           
 
             f_day = open(f'./datas/log/day_buy.txt',"r",encoding='utf-8')   #设置文件对象
-            day_buy = f_day.read()[-300:]     #将txt文件的所有内容读入到字符串str中
+            day_buy = f_day.read()[-800:]     #将txt文件的所有内容读入到字符串str中
             f_day.close()   #将文件关闭
             if(day_buy):
                 self.textBrowsertwo.clear()
                 self.textBrowsertwo.append(day_buy)
 
             f_info = open(f'./datas/log/infodata.txt',"r",encoding='utf-8')   #设置文件对象
-            infodata = f_info.read()[-300:]     #将txt文件的所有内容读入到字符串str中
+            infodata = f_info.read()[-800:]     #将txt文件的所有内容读入到字符串str中
             f_info.close()   #将文件关闭
             if(infodata):
                 self.textBrowserone.clear()
@@ -787,19 +777,32 @@ class Datainfo:
             time.sleep(8)
             
             print(minute)
-            btc_isbuy  =  Datainfo.btc_isbuy(minute)
+            #btc_isbuy  =  Datainfo.btc_isbuy(minute)
             eth_isbuy  =  Datainfo.eth_isbuy(minute)
 
-            if('15单' == btc_isbuy or '买单小于卖单'== eth_isbuy):
+            #if('15单' == btc_isbuy or '买单小于卖单'== eth_isbuy):
+            #    Datainfo.saveinfo('预测不买入。。。')
+            #    return
+            #elif('买入' == btc_isbuy  and '买入' == eth_isbuy):
+            #    api_key, secret_key, passphrase, flag = Datainfo.get_userinfo()
+            #    Datainfo.orderbuy(api_key, secret_key, passphrase, flag)
+            #elif('卖出' == btc_isbuy and '卖出' == eth_isbuy):
+            #    api_key, secret_key, passphrase, flag = Datainfo.get_userinfo()
+            #    Datainfo.ordersell(api_key, secret_key, passphrase, flag)
+            #elif('不买卖' == btc_isbuy or '不买卖' == eth_isbuy):
+            #    Datainfo.saveinfo('预测不买卖。。。')
+            #    Datainfo.save_finalinfo('预测不买卖。。。')
+
+            if('买单小于卖单'== eth_isbuy):
                 Datainfo.saveinfo('预测不买入。。。')
                 return
-            elif('买入' == btc_isbuy  and '买入' == eth_isbuy):
+            elif('买入' == eth_isbuy):
                 api_key, secret_key, passphrase, flag = Datainfo.get_userinfo()
                 Datainfo.orderbuy(api_key, secret_key, passphrase, flag)
-            elif('卖出' == btc_isbuy and '卖出' == eth_isbuy):
+            elif('卖出' == eth_isbuy):
                 api_key, secret_key, passphrase, flag = Datainfo.get_userinfo()
                 Datainfo.ordersell(api_key, secret_key, passphrase, flag)
-            elif('不买卖' == btc_isbuy or '不买卖' == eth_isbuy):
+            elif('不买卖' == eth_isbuy):
                 Datainfo.saveinfo('预测不买卖。。。')
                 Datainfo.save_finalinfo('预测不买卖。。。')
 
