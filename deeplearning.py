@@ -396,7 +396,7 @@ class Datainfo:
 
         #Datainfo.saveinfo('下单完毕。。。')
 
-        lastprice = Datainfo.getlastprice(api_key, secret_key, passphrase, flag)
+        lastprice = Datainfo.getlastprice(api_key, secret_key, passphrase, flag,symbol)
 
         #Datainfo.saveinfo('获取最新价格。。。'+str(lastprice))
         
