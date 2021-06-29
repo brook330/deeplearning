@@ -40,7 +40,7 @@ import statsmodels.api as sm
 import statsmodels.formula.api as smf
 import math
 
-
+num = 100
 
 class DateEncoder(json.JSONEncoder):
     def default(self, obj):
@@ -207,9 +207,10 @@ class Datainfo:
     #        print('不买卖')
     #        return '不买卖'
 
-    def eth_isbuy(minute):
+    def eth_isbuy(minute,num):
 
-        
+        num+=1
+
         #Datainfo.saveinfo('开始获取是否可以买入ismarket。。。')
 
         # api_key,secret_key,passphrase,flag = Datainfo.get_userinfo()
@@ -287,6 +288,9 @@ class Datainfo:
         print(str(datetime.now())+'--->>>(sum(buyVolumes)/len(buyVolumes)) / (sum(sellVolumes)/len(sellVolumes))的计算结果--->>>',(sum(buyVolumes)/len(buyVolumes)) / (sum(sellVolumes)/len(sellVolumes)))
 
         #===获取close数据
+
+        df_old_close = pd.read_csv(f'./datas/okex/eth/oldclose.csv')
+
         headers = {
         'authority': 'www.okex.com',
         'sec-ch-ua': '^\\^',
@@ -332,6 +336,8 @@ class Datainfo:
         dw['vol'] = list(map(float, dw['vol'].values))
         dw.to_csv(f'./datas/okex/eth/close.csv',index = False)
         dw = pd.read_csv(f'./datas/okex/eth/close.csv')
+
+        dw = df_old_close.append(dw.tail(1),ignore_index=True)
         Datainfo.getfulldata(dw,'eth')
         dw = pd.read_csv(f'./datas/okex/eth/close.csv')
         #===判断是否买入或者卖出
@@ -343,7 +349,7 @@ class Datainfo:
         MATRIX = b/math.pi*720 >=20 and dw['MATRIX'].tail(1).values > dw['MATRIX'].values[-2] 
         F_MATRIX = mb/math.pi*720 >=20 and dw['MATRIX'].tail(1).values < dw['MATRIX'].values[-2] 
         #人工智能计算结果
-        learning = Datainfo.getnextdata(dw,'ETH-USD-SWAP')
+        learning = Datainfo.getnextdata(dw,'ETH-USD-SWAP',num)
         print('learning--->>>',learning)
 
         Datainfo.saveinfo('ETH-USD-SWAP--->>>MATRIX--->>>'+str(MATRIX)+str(b/math.pi*720 )+',F_MATRIX--->>>'+str(F_MATRIX)+str(mb/math.pi*720 )+'MATRIX-->>'+str(dw['MATRIX'].tail(1).values) +'REF--MATRIX-->>'+str(dw['MATRIX'].values[-2])+'--->>>,buyVolumes的计算结果--->>>'+str((sum(buyVolumes)/len(buyVolumes)) / (sum(sellVolumes)/len(sellVolumes)))+',learning--->>>'+str(learning))
@@ -382,7 +388,8 @@ class Datainfo:
         df['MATRIX'] = ta.MA(df['TRIX'].values, timeperiod=30, matype=0)
 
         
-        df.to_csv(f'./datas/okex/'+symbol+'/close.csv',index = False)
+        df.to_csv(f'./datas/okex/'+symbol+'/'+'close.csv',index = False)
+        df.to_csv(f'./datas/okex/'+symbol+'/'+'oldclose.csv',index = False)
 
      #数据清洗
     def clean_data_df(df):
@@ -421,7 +428,7 @@ class Datainfo:
         svm_score = Datainfo.svm_svc(X_train, X_test, y_train, y_test)
 
     #获取下个预期数值的方法
-    def getnextdata(df,symbol):
+    def getnextdata(df,symbol,num):
 
         
         f_info = "\n开始获取是否"+symbol+"买入信号 SVM人工智能运算"
@@ -437,10 +444,10 @@ class Datainfo:
 
         #训练模型
         clf = svm.SVR(kernel='linear')
-        features_train = df_20d[:200]
-        labels_train = df_20d['close'].shift(-1)[:200]     # 回归问题的标签就是预测的就是股价，下一天的收盘价就是前一天的标签；
-        features_test = df_20d[200:]
-        labels_test = df_20d['close'].shift(-1)[200:]
+        features_train = df_20d[:800+num]
+        labels_train = df_20d['close'].shift(-1)[:800+num]     # 回归问题的标签就是预测的就是股价，下一天的收盘价就是前一天的标签；
+        features_test = df_20d[800+num:]
+        labels_test = df_20d['close'].shift(-1)[800+num:]
         clf.fit(features_train, labels_train)     # 模型的训练过程；
 
         predict = clf.predict(features_test)      # 给你测试集的特征，返回的是测试集的标签，回归问题的标签就是股价；
@@ -449,8 +456,8 @@ class Datainfo:
         dft['predict'] = predict     # 把前面预测的测试集的股价给添加到DataFrame中；
         dft = dft.rename(columns = {'close': 'Next Close', 'predict':'Predict Next Close'})
 
-        current_close = df_20d[['close']].iloc[200:]
-        next_open = df[['open']].iloc[220:].shift(-1)
+        current_close = df_20d[['close']].iloc[800+num:]
+        next_open = df[['open']].iloc[820+num:].shift(-1)
 
         #获取df1 df2的值
         df1 = pd.merge(dft, current_close, left_index=True, right_index=True)
@@ -760,11 +767,13 @@ class Datainfo:
 
 
 
+
         def okex5M_buy(self):
 
-            #self.getdatainfo('5')
+            global num
+            #self.getdatainfo('5',num)
             scheduler = BlockingScheduler()
-            scheduler.add_job((self.getdatainfo), 'cron', args = ['5'], minute='*/5')
+            scheduler.add_job((self.getdatainfo), 'cron', args = ['5',num], minute='*/5')
             print(scheduler.get_jobs())
             try:
                 scheduler.start()
@@ -772,13 +781,14 @@ class Datainfo:
                 scheduler.shutdown()
 
         
-        def getdatainfo(self,minute):
+        def getdatainfo(self,minute,num):
 
             time.sleep(8)
             
             print(minute)
             #btc_isbuy  =  Datainfo.btc_isbuy(minute)
-            eth_isbuy  =  Datainfo.eth_isbuy(minute)
+            eth_isbuy  =  Datainfo.eth_isbuy(minute,num)
+
 
             #if('15单' == btc_isbuy or '买单小于卖单'== eth_isbuy):
             #    Datainfo.saveinfo('预测不买入。。。')
