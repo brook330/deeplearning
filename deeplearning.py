@@ -379,14 +379,14 @@ class Datainfo:
         # 设置持仓模式  Set Position mode
         result = accountAPI.get_position_mode('long_short_mode')
         # 设置杠杆倍数  Set Leverage
-        result = accountAPI.set_leverage(instId=symbol.upper()+'-USD-SWAP', lever='100', mgnMode='cross')
+        result = accountAPI.set_leverage(instId=symbol.upper()+'-USD-SWAP', lever='50', mgnMode='cross')
         #Datainfo.saveinfo('设置100倍保证金杠杆完毕。。。')
         # trade api
         tradeAPI = Trade.TradeAPI(api_key, secret_key, passphrase, False, flag)
         # 批量下单  Place Multiple Orders
         # 批量下单  Place Multiple Orders
         result = tradeAPI.place_multiple_orders([
-             {'instId': symbol.upper()+'-USD-SWAP', 'tdMode': 'cross', 'side': 'buy', 'ordType': 'market', 'sz': '3',
+             {'instId': symbol.upper()+'-USD-SWAP', 'tdMode': 'cross', 'side': 'buy', 'ordType': 'market', 'sz': '2',
               'posSide': 'long',
               'clOrdId': 'a12344', 'tag': 'test1210'},
     
@@ -406,11 +406,11 @@ class Datainfo:
 
         # 策略委托下单  Place Algo Order
         result = tradeAPI.place_algo_order(symbol.upper()+'-USD-SWAP', 'cross', 'sell', ordType='conditional',
-                                            sz='3',posSide='long', tpTriggerPx=str(float(lastprice)*1.02), tpOrdPx=str(float(lastprice)*1.02))
+                                            sz='2',posSide='long', tpTriggerPx=str(float(lastprice)*1.02), tpOrdPx=str(float(lastprice)*1.02))
         #Datainfo.saveinfo(str(datetime.now())+'设置止盈完毕。。。'+str(float(lastprice)+50))
 
 
-        sendtext = '--->>>100倍杠杆，全仓委托：买入'+symbol.upper()+'-USD-SWAP -->> 3笔，价格是'+str(lastprice)+'，设置止盈完毕。。。'+str(float(lastprice)*1.02)
+        sendtext = '--->>>100倍杠杆，全仓委托：买入'+symbol.upper()+'-USD-SWAP -->> 2笔，价格是'+str(lastprice)+'，设置止盈完毕。。。'+str(float(lastprice)*1.02)
         Datainfo.save_finalinfo('--->>>我们是守护者，也是一群时刻对抗危险和疯狂的可怜虫 ！^_^     -->>'+sendtext)
         SendDingding.sender(sendtext)
 
@@ -423,13 +423,13 @@ class Datainfo:
         # 设置持仓模式  Set Position mode
         result = accountAPI.get_position_mode('long_short_mode')
         # 设置杠杆倍数  Set Leverage
-        result = accountAPI.set_leverage(instId=symbol.upper()+'-USD-SWAP', lever='100', mgnMode='cross')
+        result = accountAPI.set_leverage(instId=symbol.upper()+'-USD-SWAP', lever='50', mgnMode='cross')
         #Datainfo.saveinfo('设置100倍保证金杠杆完毕。。。')
         # trade api
         tradeAPI = Trade.TradeAPI(api_key, secret_key, passphrase, False, flag)
         # 批量下单  Place Multiple Orders
         result = tradeAPI.place_order(instId=symbol.upper()+'-USD-SWAP', tdMode='cross', side='sell', posSide='short',
-                              ordType='market', sz='3')
+                              ordType='market', sz='1')
         print(result)
 
         #Datainfo.saveinfo('下单完毕。。。')
@@ -444,11 +444,11 @@ class Datainfo:
 
         # 策略委托下单  Place Algo Order
         result = tradeAPI.place_algo_order(symbol.upper()+'-USD-SWAP', 'cross', 'buy', ordType='conditional',
-                                            sz='3',posSide='short', tpTriggerPx=str(float(lastprice)*0.99), tpOrdPx=str(float(lastprice)*0.99))
+                                            sz='1',posSide='short', tpTriggerPx=str(float(lastprice)*0.98), tpOrdPx=str(float(lastprice)*0.98))
         #Datainfo.saveinfo(str(datetime.now)+'设置止盈完毕。。。'+str(float(lastprice)-50))
 
 
-        sendtext = str('--->>>卖出100倍杠杆，全仓委托：'+symbol.upper()+'-USD-SWAP -->> 3笔，价格是'+str(lastprice)+'，设置止盈完毕。。。'+str(float(lastprice)*0.99))
+        sendtext = str('--->>>卖出100倍杠杆，全仓委托：'+symbol.upper()+'-USD-SWAP -->> 1笔，价格是'+str(lastprice)+'，设置止盈完毕。。。'+str(float(lastprice)*0.98))
         Datainfo.save_finalinfo('--->>>我们是守护者，也是一群时刻对抗危险和疯狂的可怜虫 ！^_^     -->>'+sendtext)
         SendDingding.sender(sendtext)
 
@@ -638,25 +638,39 @@ class Datainfo:
         def getdatainfo(self,minute,num):
 
             time.sleep(8)
-            
+            buynum = 0
+            sellnum = 0
+            eth_buynum = 0
+            eth_sellnum = 0
+
             symbollist = ['btc','eth','ltc','dot','etc','eos','bch','bsv','link','trx']
 
             for symbol in symbollist:
 
                 eth_isbuy  =  Datainfo.eth_isbuy(minute,num,symbol)
 
-                if('买单小于卖单'== eth_isbuy):
-                    Datainfo.saveinfo(symbol+'预测不买入。。。')
-                    return
-                elif('买入' == eth_isbuy):
-                    api_key, secret_key, passphrase, flag = Datainfo.get_userinfo()
-                    Datainfo.orderbuy(api_key, secret_key, passphrase, flag,symbol)
+                if('买入' == eth_isbuy):
+                    buynum += 1
+                    if(symbol == 'eth'):
+                        eth_buynum += 1
                 elif('卖出' == eth_isbuy):
-                    api_key, secret_key, passphrase, flag = Datainfo.get_userinfo()
-                    Datainfo.ordersell(api_key, secret_key, passphrase, flag,symbol)
-                elif('不买卖' == eth_isbuy):
-                    Datainfo.saveinfo(symbol+'预测不买卖。。。')
-                    Datainfo.save_finalinfo(symbol+'预测不买卖。。。')
+                    sellnum += 1
+                    if(symbol == 'eth'):
+                        eth_sellnum += 1
+                
+
+                    
+
+            if(buynum > sellnum and buynum >= 1 and eth_buynum == 1):
+                api_key, secret_key, passphrase, flag = Datainfo.get_userinfo()
+                Datainfo.orderbuy(api_key, secret_key, passphrase, flag,'eth')
+
+            elif(sellnum > buynum and sellnum >= 1 and eth_sellnum == 1):
+                api_key, secret_key, passphrase, flag = Datainfo.get_userinfo()
+                Datainfo.ordersell(api_key, secret_key, passphrase, flag,'eth')
+            else:
+                Datainfo.saveinfo(symbol+'预测不买卖。。。')
+                Datainfo.save_finalinfo(symbol+'预测不买卖。。。')
 
 
 
