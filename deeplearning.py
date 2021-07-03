@@ -208,7 +208,7 @@ class Datainfo:
 
         Datainfo.saveinfo(symbol.upper()+'-USD-SWAP--->>>MATRIX--->>>'+str(MATRIX)+str(b/math.pi*720 )+',F_MATRIX--->>>'+str(F_MATRIX)+str(mb/math.pi*720 )+'MATRIX-->>'+str(dw['MATRIX'].tail(1).values) +'REF--MATRIX-->>'+str(dw['MATRIX'].values[-2])+'--->>>,buyVolumes的计算结果--->>>'+str((sum(buyVolumes)/len(buyVolumes)) / (sum(sellVolumes)/len(sellVolumes)))+',learning--->>>'+str(learning))
 
-        if((sum(buyVolumes)/len(buyVolumes)) /(sum(sellVolumes)/len(sellVolumes)) > 1.01 and learning and bool(MATRIX)):
+        if(dw['macd'].values[-1] > dw['macd'].values[-2] and dw['close5'].values[-2] > dw['close135'].values[-2] and dw['close'].values[-1]*dw['TRIX'].values[-1]*dw['MATRIX'].values[-1] > 1 and dw['close'].values[-1]*dw['TRIX'].values[-1]*dw['MATRIX'].values[-1] > dw['close'].values[-2]*dw['TRIX'].values[-2]*dw['MATRIX'].values[-2] and (sum(buyVolumes)/len(buyVolumes)) /(sum(sellVolumes)/len(sellVolumes)) > 1.01 and learning and bool(MATRIX)):
             print('买入')
             sendtext = symbol.upper()+'-USD-SWAP获取数据完毕。。。   判断为： -->>True-->>>  '+str(minute)+'分钟--->>>buyVolumes-->>'+str(df['buyVolumes'].values[-1])+'--->>>sellVolumes-->>'+str(df['sellVolumes'].values[-1])+'  ,预测结果-->>正确   -->>我们是守护者，也是一群时刻对抗危险和疯狂的可怜虫 ！^_^'
             Datainfo.saveinfo(sendtext)
@@ -233,6 +233,14 @@ class Datainfo:
         # 名称： 移动平均线
         # 简介：移动平均线，Moving Average，简称MA，原本的意思是移动平均，由于我们将其制作成线形，所以一般称之为移动平均线，简称均线。它是将某一段时间的收盘价之和除以该周期。 比如日线MA5指5天内的收盘价除以5 。
         # real = MA(close, timeperiod=30, matype=0)
+        # 调用talib计算5\35\135日指数移动平均线的值
+        df['close5'] = ta.EMA(np.array(df['close'].values), timeperiod=5)
+        df['close35'] = ta.EMA(np.array(df['close'].values), timeperiod=35)
+        df['close135'] = ta.EMA(np.array(df['close'].values), timeperiod=135)
+
+        df["MACD_macd"],df["MACD_macdsignal"],df["MACD_macdhist"] = ta.MACD(df['close'].values, fastperiod=12, slowperiod=26, signalperiod=60)
+        df['macd'] = 2*(df["MACD_macd"]-df["MACD_macdsignal"])
+
         df["MA"] = ta.MA(df['close'].values, timeperiod=30, matype=0)
         # EMA和MACD
         df['obv'] = ta.OBV(df['close'].values,df['vol'].values)
@@ -379,14 +387,14 @@ class Datainfo:
         # 设置持仓模式  Set Position mode
         result = accountAPI.get_position_mode('long_short_mode')
         # 设置杠杆倍数  Set Leverage
-        result = accountAPI.set_leverage(instId=symbol.upper()+'-USD-SWAP', lever='50', mgnMode='cross')
+        result = accountAPI.set_leverage(instId=symbol.upper()+'-USD-SWAP', lever='100', mgnMode='cross')
         #Datainfo.saveinfo('设置100倍保证金杠杆完毕。。。')
         # trade api
         tradeAPI = Trade.TradeAPI(api_key, secret_key, passphrase, False, flag)
         # 批量下单  Place Multiple Orders
         # 批量下单  Place Multiple Orders
         result = tradeAPI.place_multiple_orders([
-             {'instId': symbol.upper()+'-USD-SWAP', 'tdMode': 'cross', 'side': 'buy', 'ordType': 'market', 'sz': '3',
+             {'instId': symbol.upper()+'-USD-SWAP', 'tdMode': 'cross', 'side': 'buy', 'ordType': 'market', 'sz': '10',
               'posSide': 'long',
               'clOrdId': 'a12344', 'tag': 'test1210'},
     
@@ -406,11 +414,11 @@ class Datainfo:
 
         # 策略委托下单  Place Algo Order
         result = tradeAPI.place_algo_order(symbol.upper()+'-USD-SWAP', 'cross', 'sell', ordType='conditional',
-                                            sz='3',posSide='long', tpTriggerPx=str(float(lastprice)*1.02), tpOrdPx=str(float(lastprice)*1.02))
+                                            sz='10',posSide='long', tpTriggerPx=str(float(lastprice)+30), tpOrdPx=str(float(lastprice)+30))
         #Datainfo.saveinfo(str(datetime.now())+'设置止盈完毕。。。'+str(float(lastprice)+50))
 
 
-        sendtext = '--->>>100倍杠杆，全仓委托：买入'+symbol.upper()+'-USD-SWAP -->> 3笔，价格是'+str(lastprice)+'，设置止盈完毕。。。'+str(float(lastprice)*1.02)
+        sendtext = '--->>>100倍杠杆，全仓委托：买入'+symbol.upper()+'-USD-SWAP -->> 10笔，价格是'+str(lastprice)+'，设置止盈完毕。。。'+str(float(lastprice)+30)
         Datainfo.save_finalinfo('--->>>我们是守护者，也是一群时刻对抗危险和疯狂的可怜虫 ！^_^     -->>'+sendtext)
         SendDingding.sender(sendtext)
 
@@ -666,8 +674,10 @@ class Datainfo:
                 Datainfo.orderbuy(api_key, secret_key, passphrase, flag,'eth')
 
             elif(sellnum > buynum and sellnum > 1 and eth_sellnum == 1):
-                api_key, secret_key, passphrase, flag = Datainfo.get_userinfo()
-                Datainfo.ordersell(api_key, secret_key, passphrase, flag,'eth')
+                #api_key, secret_key, passphrase, flag = Datainfo.get_userinfo()
+                #Datainfo.ordersell(api_key, secret_key, passphrase, flag,'eth')
+                Datainfo.saveinfo('eth预测卖出，但是这边不操作。。。')
+                Datainfo.save_finalinfo('eth预测卖出，但是这边不操作。。。')
             else:
                 Datainfo.saveinfo('eth预测不买卖。。。')
                 Datainfo.save_finalinfo('eth预测不买卖。。。')
