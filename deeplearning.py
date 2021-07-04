@@ -196,31 +196,24 @@ class Datainfo:
         dw = pd.read_csv(f'./datas/okex/'+symbol+'/close.csv')
         #===判断是否买入或者卖出
         #print('obv-->>',dw['obv'].tail(1).values ,'MA_obv-->>', dw['maobv'].tail(1).values)
+        if(dw['vol'].values[-1] and dw['p'].values[-1] and dw['vol'].values[-2] and dw['p'].values[-2]):
+            X1 = dw['close'].values[-1]/dw['vol'].values[-1]*dw['p'].values[-1]/dw['MA'].values[-1]*dw['obv'].values[-1]/dw['maobv'].values[-1]*dw['TRIX'].values[-1]*dw['MATRIX'].values[-1]*dw['close5'].values[-1]/dw['close135'].values[-1]*dw['macd'].values[-1]
+            X2 = dw['close'].values[-2]/dw['vol'].values[-2]*dw['p'].values[-2]/dw['MA'].values[-2]*dw['obv'].values[-2]/dw['maobv'].values[-2]*dw['TRIX'].values[-2]*dw['MATRIX'].values[-2]*dw['close5'].values[-2]/dw['close135'].values[-2]*dw['macd'].values[-2]
 
-        #MATRIX角>20度，【ATAN("TRIX.MATRIX"/REF("TRIX.MATRIX",1)-1)*180/3.1416>=20 AND "TRIX.MATRIX">REF("TRIX.MATRIX",1);
-        b = math.atan((dw['TRIX'].tail(1).values[0]*dw['MATRIX'].tail(1).values[0])/(dw['MATRIX'].values[-2]*dw['TRIX'].values[-2])-1)
-        mb = math.atan((dw['MATRIX'].values[-2]*dw['TRIX'].values[-2])/(dw['TRIX'].tail(1).values[0]*dw['MATRIX'].tail(1).values[0])-1)
-        MATRIX = b/math.pi*720 >=20 and dw['MATRIX'].tail(1).values > dw['MATRIX'].values[-2] 
-        F_MATRIX = mb/math.pi*720 >=20 and dw['MATRIX'].tail(1).values < dw['MATRIX'].values[-2] 
-        #人工智能计算结果
-        learning = Datainfo.getnextdata(dw,symbol.upper()+'-USD-SWAP',num)
-        print('learning--->>>',learning)
+            Y1 = dw['close'].values[-1]*float(dw['MATRIX'].values[-1])*float(dw['TRIX'].values[-1])
+            Y2 = dw['close'].values[-2]*float(dw['MATRIX'].values[-2])*float(dw['TRIX'].values[-2])
 
-        Datainfo.saveinfo(symbol.upper()+'-USD-SWAP--->>>MATRIX--->>>'+str(MATRIX)+str(b/math.pi*720 )+',F_MATRIX--->>>'+str(F_MATRIX)+str(mb/math.pi*720 )+'MATRIX-->>'+str(dw['MATRIX'].tail(1).values) +'REF--MATRIX-->>'+str(dw['MATRIX'].values[-2])+'--->>>,buyVolumes的计算结果--->>>'+str((sum(buyVolumes)/len(buyVolumes)) / (sum(sellVolumes)/len(sellVolumes)))+',learning--->>>'+str(learning))
-
-        if(dw['macd'].values[-1] > dw['macd'].values[-2] and dw['close5'].values[-2] > dw['close135'].values[-2] and dw['close'].values[-1]*dw['TRIX'].values[-1]*dw['MATRIX'].values[-1] > 1 and dw['close'].values[-1]*dw['TRIX'].values[-1]*dw['MATRIX'].values[-1] > dw['close'].values[-2]*dw['TRIX'].values[-2]*dw['MATRIX'].values[-2] and (sum(buyVolumes)/len(buyVolumes)) /(sum(sellVolumes)/len(sellVolumes)) > 1.01 and learning and bool(MATRIX)):
-            print('买入')
-            sendtext = symbol.upper()+'-USD-SWAP获取数据完毕。。。   判断为： -->>True-->>>  '+str(minute)+'分钟--->>>buyVolumes-->>'+str(df['buyVolumes'].values[-1])+'--->>>sellVolumes-->>'+str(df['sellVolumes'].values[-1])+'  ,预测结果-->>正确   -->>我们是守护者，也是一群时刻对抗危险和疯狂的可怜虫 ！^_^'
-            Datainfo.saveinfo(sendtext)
-            return '买入'
-        elif((sum(buyVolumes)/len(buyVolumes)) /(sum(sellVolumes)/len(sellVolumes)) < 0.99  and (not learning) and bool(F_MATRIX)):
-            print('卖出')
-            sendtext = symbol.upper()+'-USD-SWAP获取数据完毕。。。   判断为： -->>True-->>>  '+str(minute)+'分钟--->>>buyVolumes-->>'+str(df['buyVolumes'].values[-1])+'--->>>sellVolumes-->>'+str(df['sellVolumes'].values[-1])+'  ,预测结果-->>正确   -->>我们是守护者，也是一群时刻对抗危险和疯狂的可怜虫 ！^_^'
-            Datainfo.saveinfo(sendtext)
-            return '卖出'
-        else:
-            print('不买卖')
-            return '不买卖'
+            Datainfo.saveinfo('---X1:--->>>'+str(X1)+'---X2:--->>>'+str(X2)+'---Y1:--->>>'+str(Y1)+'---Y2:--->>>'+str(Y2))
+            #(not(float(df['X'].values[i]) > 5 and float(df['X'].values[i-1]) < -3)) and float(df['X'].values[i]) > 0 and float(df['X'].values[i-1]) < 0 and not(c*float(df['MATRIX'].values[i])*float(df['TRIX'].values[i]) > 0 and #df['close'].values[-1]*float(df['MATRIX'].values[i-1])*float(df['TRIX'].values[i-1]) < 0)):
+            
+            if(not(X1 >5 and X2 < -3) and X1 >0 and X2 <0 and not(Y1 >0 and Y2 < 0)):
+                print('买入')
+                sendtext = symbol.upper()+'-USD-SWAP获取数据完毕。。。   判断为： -->>True-->>>  '+str(minute)+'分钟--->>>buyVolumes-->>'+str(df['buyVolumes'].values[-1])+'--->>>sellVolumes-->>'+str(df['sellVolumes'].values[-1])+'  ,预测结果-->>正确   -->>我们是守护者，也是一群时刻对抗危险和疯狂的可怜虫 ！^_^'
+                Datainfo.saveinfo(sendtext)
+                return '买入'
+            else:
+                print('不买卖')
+                return '不买卖'
 
 
     def getfulldata(df,symbol):
@@ -253,93 +246,7 @@ class Datainfo:
         df.to_csv(f'./datas/okex/'+symbol+'/'+'close.csv',index = False)
         df.to_csv(f'./datas/okex/'+symbol+'/'+'oldclose.csv',index = False)
 
-     #数据清洗
-    def clean_data_df(df):
-        # 计算当前、未来1-day涨跌幅
-        df.loc[:,'1d_close_future_pct'] = df['close'].shift(-1).pct_change(1)
-        df.loc[:,'now_1d_direction'] = df['close'].pct_change(1)
-        df.dropna(inplace=True)
-        # ====1代表上涨，0代表下跌
-        df.loc[df['1d_close_future_pct'] > 0, 'future_1d_direction'] = 1
-        df.loc[df['1d_close_future_pct'] <= 0, 'future_1d_direction'] = 0
-        df = df[['now_1d_direction', 'future_1d_direction']]
-        return df
-
-    #增加数据标签
-    def split_train_and_test(df):
-        # 创建特征 X 和标签 y
-        y = df['future_1d_direction'].values
-        X = df.drop('future_1d_direction', axis=1).values
-        # 划分训练集和测试集
-        X_train, X_test, y_train, y_test =  train_test_split(X, y, test_size=0.8, random_state=42)
-        return X_train, X_test, y_train, y_test
-
-    #svm_svc模型
-    def svm_svc(X_train, X_test, y_train, y_test):
-        clf = svm.SVC(gamma='auto')
-        clf.fit(X_train, y_train)
-        new_prediction = clf.predict(X_test)
-    #   print("Prediction: {}".format(new_prediction))
-        return (clf.score(X_test, y_test))
-
-    #主函数 SVM
-    def main(df):
-        #数据清洗
-        df = Datainfo.clean_data_df(df)
-        X_train, X_test, y_train, y_test =  Datainfo.split_train_and_test(df)
-        svm_score = Datainfo.svm_svc(X_train, X_test, y_train, y_test)
-
-    #获取下个预期数值的方法
-    def getnextdata(df,symbol,num):
-
-        
-        f_info = "\n开始获取是否"+symbol+"买入信号 SVM人工智能运算"
-        print(f_info)
-        #运行主函数
-        Datainfo.main(df)
-        #获取close值
-        for i in range(1, 21, 1):
-            df['close - ' + str(i) + 'd'] = df['close'].shift(i)
-
-        df_20d = df[[x for x in df.columns if 'close' in x]].iloc[20:]
-        df_20d = df_20d.iloc[:,::-1]   # 转换特征的顺序；
-
-        #训练模型
-        clf = svm.SVR(kernel='linear')
-        features_train = df_20d[:800+num]
-        labels_train = df_20d['close'].shift(-1)[:800+num]     # 回归问题的标签就是预测的就是股价，下一天的收盘价就是前一天的标签；
-        features_test = df_20d[800+num:]
-        labels_test = df_20d['close'].shift(-1)[800+num:]
-        clf.fit(features_train, labels_train)     # 模型的训练过程；
-
-        predict = clf.predict(features_test)      # 给你测试集的特征，返回的是测试集的标签，回归问题的标签就是股价；
-
-        dft = pd.DataFrame(labels_test)
-        dft['predict'] = predict     # 把前面预测的测试集的股价给添加到DataFrame中；
-        dft = dft.rename(columns = {'close': 'Next Close', 'predict':'Predict Next Close'})
-
-        current_close = df_20d[['close']].iloc[800+num:]
-        next_open = df[['open']].iloc[820+num:].shift(-1)
-
-        #获取df1 df2的值
-        df1 = pd.merge(dft, current_close, left_index=True, right_index=True)
-
-        df2 = pd.merge(df1, next_open, left_index=True, right_index=True)
-        df2.columns = ['Next Close', 'Predicted Next Close', 'Current Close', 'Next Open']
-        #画图
-        #df2['Signal'] = np.where(df2['Predicted Next Close'] > df2['Next Open'] ,1,0)
-
-        #df2['PL'] =  np.where(df2['Signal'] == 1,(df2['Next Close'] - df2['Next Open'])/df2['Next Open'],0)
-
-        #df2['Strategy'] = (df2['PL'].shift(1)+1).cumprod()
-        #df2['return'] = (df2['Next Close'].pct_change()+1).cumprod()
-
-        #df2[['Strategy','return']].dropna().plot(figsize=(10, 6))
-
-        #获取预期下个整点的值
-        print(df2['Predicted Next Close'].tail(1).values[0] > df2['Current Close'].tail(1).values[0])
-        print(df2.tail(5))
-        return df2['Predicted Next Close'].tail(1).values[0] > df2['Current Close'].tail(1).values[0]
+       
 
     #获取用户API信息
     def get_userinfo():
@@ -414,11 +321,11 @@ class Datainfo:
 
         # 策略委托下单  Place Algo Order
         result = tradeAPI.place_algo_order(symbol.upper()+'-USD-SWAP', 'cross', 'sell', ordType='conditional',
-                                            sz='10',posSide='long', tpTriggerPx=str(float(lastprice)+30), tpOrdPx=str(float(lastprice)+30))
+                                            sz='10',posSide='long', tpTriggerPx=str(float(lastprice)+100), tpOrdPx=str(float(lastprice)+100))
         #Datainfo.saveinfo(str(datetime.now())+'设置止盈完毕。。。'+str(float(lastprice)+50))
 
 
-        sendtext = '--->>>100倍杠杆，全仓委托：买入'+symbol.upper()+'-USD-SWAP -->> 10笔，价格是'+str(lastprice)+'，设置止盈完毕。。。'+str(float(lastprice)+30)
+        sendtext = '--->>>100倍杠杆，全仓委托：买入'+symbol.upper()+'-USD-SWAP -->> 10笔，价格是'+str(lastprice)+'，设置止盈完毕。。。'+str(float(lastprice)+100)
         Datainfo.save_finalinfo('--->>>我们是守护者，也是一群时刻对抗危险和疯狂的可怜虫 ！^_^     -->>'+sendtext)
         SendDingding.sender(sendtext)
 
@@ -659,28 +566,23 @@ class Datainfo:
 
                 if('买入' == eth_isbuy):
                     buynum += 1
-                    if(symbol == 'eth'):
+                    if(symbol == 'btc'):
                         eth_buynum += 1
-                elif('卖出' == eth_isbuy):
-                    sellnum += 1
-                    if(symbol == 'eth'):
-                        eth_sellnum += 1
-                
 
                     
 
-            if(buynum > sellnum and buynum > 1 and eth_buynum == 1):
+            if(eth_buynum == 1):
                 api_key, secret_key, passphrase, flag = Datainfo.get_userinfo()
-                Datainfo.orderbuy(api_key, secret_key, passphrase, flag,'eth')
+                Datainfo.orderbuy(api_key, secret_key, passphrase, flag,'btc')
 
-            elif(sellnum > buynum and sellnum > 1 and eth_sellnum == 1):
-                #api_key, secret_key, passphrase, flag = Datainfo.get_userinfo()
-                #Datainfo.ordersell(api_key, secret_key, passphrase, flag,'eth')
-                Datainfo.saveinfo('eth预测卖出，但是这边不操作。。。')
-                Datainfo.save_finalinfo('eth预测卖出，但是这边不操作。。。')
+            #elif(sellnum > buynum and sellnum > 1 and eth_sellnum == 1):
+            #    #api_key, secret_key, passphrase, flag = Datainfo.get_userinfo()
+            #    #Datainfo.ordersell(api_key, secret_key, passphrase, flag,'eth')
+            #    Datainfo.saveinfo('eth预测卖出，但是这边不操作。。。')
+            #    Datainfo.save_finalinfo('eth预测卖出，但是这边不操作。。。')
             else:
-                Datainfo.saveinfo('eth预测不买卖。。。')
-                Datainfo.save_finalinfo('eth预测不买卖。。。')
+                Datainfo.saveinfo('btc预测不买入。。。')
+                Datainfo.save_finalinfo('btc预测不买入。。。')
 
 
 
