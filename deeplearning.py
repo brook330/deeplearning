@@ -571,7 +571,7 @@ class Datainfo:
         
         def getdatainfo(self,minute,num):
 
-            time.sleep(15)
+            time.sleep(22)
             buynum = 0
             sellnum = 0
             eth_buynum = 0
