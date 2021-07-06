@@ -124,15 +124,21 @@ class Datainfo:
                 s.cookies.update(c)#更新s的cookie
                 s.get(url = 'https://www.okex.com/v3/futures/pc/market/takerTradeVolume/'+symbol.upper()+'?t='+str(ttt)+'&unitType=0')
         df = pd.DataFrame(response.json()['data'])
-        df.to_csv(f'./datas/okex/'+symbol+'.csv',index=False)
-        df = pd.read_csv(f'./datas/okex/'+symbol+'.csv')
+
+        df['timestamps'] = list(map(float, df['timestamps'].values))
         df['timestamps'] = pd.to_datetime(df['timestamps'],unit='ms')+pd.to_timedelta('8 hours')
 
-        buyVolumes = df['buyVolumes'].tail(10).values
-        sellVolumes = df['sellVolumes'].tail(10).values
+        #列倒序内容排列
+        df = df.iloc[:,::-1]
 
-        print(df)
-        print(str(datetime.now())+'--->>>(sum(buyVolumes)/len(buyVolumes)) / (sum(sellVolumes)/len(sellVolumes))的计算结果--->>>',(sum(buyVolumes)/len(buyVolumes)) / (sum(sellVolumes)/len(sellVolumes)))
+
+        if(os.path.exists(f'./datas/okex/'+symbol+'/old_'+symbol+'.csv')):
+            df_old_vol = pd.read_csv(f'./datas/okex/'+symbol+'/old_'+symbol+'.csv')
+            df = df_old_vol.append(df.tail(1),ignore_index=True)
+
+
+        df.to_csv(f'./datas/okex/'+symbol+'/old_'+symbol+'.csv',index=False)
+
 
         #===获取close数据
 
@@ -182,18 +188,20 @@ class Datainfo:
         #df['timestamps'] = df['timestamps'].apply(lambda x:time.mktime(time.strptime(str(x),'%Y-%m-%d %H:%M:%S')))
         #print(dw)
         dw['vol'] = list(map(float, dw['vol'].values))
+        dw['close'] = list(map(float, dw['close'].values))
+
         dw.to_csv(f'./datas/okex/'+symbol+'/close.csv',index = False)
         dw = pd.read_csv(f'./datas/okex/'+symbol+'/close.csv')
 
 
         if(os.path.exists(f'./datas/okex/'+symbol+'/oldclose.csv')):
-            df_old_close = pd.read_csv(f'./datas/okex/'+symbol+'/oldclose.csv')
-            dw = df_old_close.append(dw.tail(1),ignore_index=True)
+            dw_old_close = pd.read_csv(f'./datas/okex/'+symbol+'/oldclose.csv')
+            dw = dw_old_close.append(dw.tail(1),ignore_index=True)
         else:
-            df_old_close = dw
-        print(symbol,dw)
+            dw.to_csv(f'./datas/okex/'+symbol+'/oldclose.csv')
+
         Datainfo.getfulldata(dw,symbol)
-        dw = pd.read_csv(f'./datas/okex/'+symbol+'/close.csv')
+        dw = pd.read_csv(f'./datas/okex/'+symbol+'/oldclose.csv')
         #===判断是否买入或者卖出
         #print('obv-->>',dw['obv'].tail(1).values ,'MA_obv-->>', dw['maobv'].tail(1).values)
         if(dw['vol'].values[-1] and dw['p'].values[-1] and dw['vol'].values[-2] and dw['p'].values[-2]):
@@ -204,11 +212,20 @@ class Datainfo:
             Y2 = dw['close'].values[-2]*float(dw['MATRIX'].values[-2])*float(dw['TRIX'].values[-2])
 
             Datainfo.saveinfo('---X1:--->>>'+str(X1)+'---X2:--->>>'+str(X2)+'---Y1:--->>>'+str(Y1)+'---Y2:--->>>'+str(Y2))
-            #(not(float(df['X'].values[i]) > 5 and float(df['X'].values[i-1]) < -3)) and float(df['X'].values[i]) > 0 and float(df['X'].values[i-1]) < 0 and not(c*float(df['MATRIX'].values[i])*float(df['TRIX'].values[i]) > 0 and #df['close'].values[-1]*float(df['MATRIX'].values[i-1])*float(df['TRIX'].values[i-1]) < 0)):
+
             
+            df_ff = pd.DataFrame(columns = ['timestamps']).set_index('timestamps')
+            df0 = pd.read_csv(f'./datas/okex/'+symbol+'/oldclose.csv').set_index('timestamps')
+            df_ff = df_ff.merge(df0 , left_index = True , right_index = True , how = 'outer')
+            df1 = pd.read_csv(f'./datas/okex/'+symbol+'/old_'+symbol+'.csv').set_index('timestamps')
+            df_ff = df_ff.merge(df1 , left_index = True , right_index = True , how = 'outer')
+            df_ff.to_csv(f'./datas/okex/'+symbol+'/fulldatas.csv')
+
+
+
             if(not(X1 >5 and X2 < -3) and X1 >0 and X2 <0 and not(Y1 >0 and Y2 < 0)):
                 print('买入')
-                sendtext = symbol.upper()+'-USD-SWAP获取数据完毕。。。   判断为： -->>True-->>>  '+str(minute)+'分钟--->>>buyVolumes-->>'+str(df['buyVolumes'].values[-1])+'--->>>sellVolumes-->>'+str(df['sellVolumes'].values[-1])+'  ,预测结果-->>正确   -->>我们是守护者，也是一群时刻对抗危险和疯狂的可怜虫 ！^_^'
+                sendtext = symbol.upper()+'-USD-SWAP获取数据完毕。。。   判断为： -->>True-->>>  '+str(minute)+'分钟--->>  -->>我们是守护者，也是一群时刻对抗危险和疯狂的可怜虫 ！^_^'
                 Datainfo.saveinfo(sendtext)
                 return '买入'
             else:
@@ -227,6 +244,8 @@ class Datainfo:
         # 简介：移动平均线，Moving Average，简称MA，原本的意思是移动平均，由于我们将其制作成线形，所以一般称之为移动平均线，简称均线。它是将某一段时间的收盘价之和除以该周期。 比如日线MA5指5天内的收盘价除以5 。
         # real = MA(close, timeperiod=30, matype=0)
         # 调用talib计算5\35\135日指数移动平均线的值
+        
+
         df['close5'] = ta.EMA(np.array(df['close'].values), timeperiod=5)
         df['close35'] = ta.EMA(np.array(df['close'].values), timeperiod=35)
         df['close135'] = ta.EMA(np.array(df['close'].values), timeperiod=135)
@@ -243,7 +262,6 @@ class Datainfo:
         df['MATRIX'] = ta.MA(df['TRIX'].values, timeperiod=30, matype=0)
 
         
-        df.to_csv(f'./datas/okex/'+symbol+'/'+'close.csv',index = False)
         df.to_csv(f'./datas/okex/'+symbol+'/'+'oldclose.csv',index = False)
 
        
@@ -301,7 +319,7 @@ class Datainfo:
         # 批量下单  Place Multiple Orders
         # 批量下单  Place Multiple Orders
         result = tradeAPI.place_multiple_orders([
-             {'instId': symbol.upper()+'-USD-SWAP', 'tdMode': 'cross', 'side': 'buy', 'ordType': 'market', 'sz': '10',
+             {'instId': symbol.upper()+'-USD-SWAP', 'tdMode': 'cross', 'side': 'buy', 'ordType': 'market', 'sz': '15',
               'posSide': 'long',
               'clOrdId': 'a12344', 'tag': 'test1210'},
     
@@ -321,11 +339,11 @@ class Datainfo:
 
         # 策略委托下单  Place Algo Order
         result = tradeAPI.place_algo_order(symbol.upper()+'-USD-SWAP', 'cross', 'sell', ordType='conditional',
-                                            sz='10',posSide='long', tpTriggerPx=str(float(lastprice)+100), tpOrdPx=str(float(lastprice)+100))
+                                            sz='15',posSide='long', tpTriggerPx=str(float(lastprice)+50), tpOrdPx=str(float(lastprice)+100))
         #Datainfo.saveinfo(str(datetime.now())+'设置止盈完毕。。。'+str(float(lastprice)+50))
 
 
-        sendtext = '--->>>100倍杠杆，全仓委托：买入'+symbol.upper()+'-USD-SWAP -->> 10笔，价格是'+str(lastprice)+'，设置止盈完毕。。。'+str(float(lastprice)+100)
+        sendtext = '--->>>100倍杠杆，全仓委托：买入'+symbol.upper()+'-USD-SWAP -->> 15笔，价格是'+str(lastprice)+'，设置止盈完毕。。。'+str(float(lastprice)+100)
         Datainfo.save_finalinfo('--->>>我们是守护者，也是一群时刻对抗危险和疯狂的可怜虫 ！^_^     -->>'+sendtext)
         SendDingding.sender(sendtext)
 
@@ -375,6 +393,7 @@ class Datainfo:
 
         # 获取单个产品行情信息  Get Ticker
         result = marketAPI.get_ticker(symbol.upper()+'-USDT-SWAP')
+        print(eval(json.dumps(result['data'][0])))
         
         return eval(json.dumps(result['data'][0]))['last']
    
@@ -540,25 +559,25 @@ class Datainfo:
         def okex5M_buy(self):
 
             global num
-            #self.getdatainfo('5',num)
-            scheduler = BlockingScheduler()
-            scheduler.add_job((self.getdatainfo), 'cron', args = ['5',num], minute='*/5')
-            print(scheduler.get_jobs())
-            try:
-                scheduler.start()
-            except KeyboardInterrupt:
-                scheduler.shutdown()
+            self.getdatainfo('5',num)
+            #scheduler = BlockingScheduler()
+            #scheduler.add_job((self.getdatainfo), 'cron', args = ['5',num], minute='*/5')
+            #print(scheduler.get_jobs())
+            #try:
+            #    scheduler.start()
+            #except KeyboardInterrupt:
+            #    scheduler.shutdown()
 
         
         def getdatainfo(self,minute,num):
 
-            time.sleep(8)
+            time.sleep(15)
             buynum = 0
             sellnum = 0
             eth_buynum = 0
             eth_sellnum = 0
 
-            symbollist = ['btc','eth','ltc','dot','etc','eos','bch','bsv','link','trx']
+            symbollist = ['btc','eth']
 
             for symbol in symbollist:
 
@@ -641,7 +660,7 @@ if __name__ == '__main__':
     paths.append(f'./datas/log/')
 
 
-    symbollist = ['btc','eth','ltc','dot','etc','eos','bch','bsv','link','trx']
+    symbollist = ['btc','eth']
     #将txt文件的所有内容读入到字符串str中
 
     for symbol in symbollist:
