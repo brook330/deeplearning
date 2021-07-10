@@ -221,7 +221,7 @@ class Datainfo:
 
             
 
-            if(not(X1 >5 and X2 < -3) and X1 >0 and X2 <0 and not(Y1 >0 and Y2 < 0) and learning):
+            if(not(X1 >5 and X2 < -3) and X1 >0 and X2 <0 and not(Y1 >0 and Y2 < 0) and learning and dw['close'].values[-1] > dw['close'].values[-2] and dw['macd'].values[-1] > 0):
                 print('买入')
 
                 return '买入'
