@@ -36,8 +36,6 @@ import okex.Public_api as Public
 import okex.Trade_api as Trade
 import okex.subAccount_api as SubAccount
 import okex.status_api as Status
-import statsmodels.api as sm
-import statsmodels.formula.api as smf
 import math
 
 
@@ -646,19 +644,19 @@ class Datainfo:
         def okex5M_buy(self):
 
 
-            self.getdatainfo('5')
-            #scheduler = BlockingScheduler()
-            #scheduler.add_job((self.getdatainfo), 'cron', args = ['5'], minute='*/5')
-            #print(scheduler.get_jobs())
-            #try:
-            #    scheduler.start()
-            #except KeyboardInterrupt:
-            #    scheduler.shutdown()
+            #self.getdatainfo('5')
+            scheduler = BlockingScheduler()
+            scheduler.add_job((self.getdatainfo), 'cron', args = ['5'], minute='*/5')
+            print(scheduler.get_jobs())
+            try:
+                scheduler.start()
+            except KeyboardInterrupt:
+                scheduler.shutdown()
 
         
         def getdatainfo(self,minute):
 
-            #time.sleep(45)
+            time.sleep(45)
  
 
             symbollist = ['btc','eth','bsv','bch','dot','fil','ltc','dash','eos','etc','doge','ksm','trx','link','yfi','yfii','sushi']
