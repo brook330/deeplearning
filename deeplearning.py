@@ -65,7 +65,7 @@ class Datainfo:
         list_string_buy = ['buy']
         list_string_sell = ['sell']
         print(tradeAPI.get_fills())
-        list_text = list(pd.DataFrame(eval(str(tradeAPI.get_fills()))['data'])['side'].head(100).values)
+        list_text = list(pd.DataFrame(eval(str(tradeAPI.get_fills()))['data'])['side'].head(300).values)
         all_words_buy = list(filter(lambda text: all([word in text for word in list_string_buy]), list_text ))
         all_words_sell = list(filter(lambda text: all([word in text for word in list_string_sell]), list_text ))
  
@@ -492,7 +492,7 @@ class Datainfo:
 
             #声明2线程保存数据
             p1 = multiprocessing.Process(target = sch.showwindows)
-            p2 = multiprocessing.Process(target = sch.okex5M_buy)
+            p2 = multiprocessing.Process(target = sch.okex15M_buy)
 
 
             #6个进程开始运行
@@ -641,12 +641,12 @@ class Datainfo:
 
 
 
-        def okex5M_buy(self):
+        def okex15M_buy(self):
 
 
-            #self.getdatainfo('5')
+            #self.getdatainfo('15')
             scheduler = BlockingScheduler()
-            scheduler.add_job((self.getdatainfo), 'cron', args = ['5'], minute='*/5')
+            scheduler.add_job((self.getdatainfo), 'cron', args = ['15'], minute='*/15')
             print(scheduler.get_jobs())
             try:
                 scheduler.start()
