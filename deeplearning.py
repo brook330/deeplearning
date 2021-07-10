@@ -66,15 +66,16 @@ class Datainfo:
         tradeAPI = Trade.TradeAPI(api_key, secret_key, passphrase, False, flag)
         list_string_buy = ['buy']
         list_string_sell = ['sell']
+        print(tradeAPI.get_fills())
         list_text = list(pd.DataFrame(eval(str(tradeAPI.get_fills()))['data'])['side'].head(100).values)
         all_words_buy = list(filter(lambda text: all([word in text for word in list_string_buy]), list_text ))
         all_words_sell = list(filter(lambda text: all([word in text for word in list_string_sell]), list_text ))
  
         print('总计：--->>>',len(all_words_buy) - len(all_words_sell),' 单 。。。>>>')
-        if(len(all_words_buy) - len(all_words_sell)>80):
-            Datainfo.saveinfo(symbol+'买单大于80单返回。。。>>>')
+        if(len(all_words_buy) - len(all_words_sell)>50):
+            Datainfo.saveinfo(symbol+'买单大于50单返回。。。>>>')
             
-            return '80单'
+            return '50单'
 
 
         t = time.time()
@@ -645,22 +646,22 @@ class Datainfo:
         def okex5M_buy(self):
 
 
-            #self.getdatainfo('5')
-            scheduler = BlockingScheduler()
-            scheduler.add_job((self.getdatainfo), 'cron', args = ['5'], minute='*/5')
-            print(scheduler.get_jobs())
-            try:
-                scheduler.start()
-            except KeyboardInterrupt:
-                scheduler.shutdown()
+            self.getdatainfo('5')
+            #scheduler = BlockingScheduler()
+            #scheduler.add_job((self.getdatainfo), 'cron', args = ['5'], minute='*/5')
+            #print(scheduler.get_jobs())
+            #try:
+            #    scheduler.start()
+            #except KeyboardInterrupt:
+            #    scheduler.shutdown()
 
         
         def getdatainfo(self,minute):
 
-            time.sleep(45)
+            #time.sleep(45)
  
 
-            symbollist = ['btc','eth','bsv','bch','dot','fil','ltc','xrp','eos','etc','doge','ksm','trx','link','yfi','yfii','sushi']
+            symbollist = ['btc','eth','bsv','bch','dot','fil','ltc','dash','eos','etc','doge','ksm','trx','link','yfi','yfii','sushi']
 
             for symbol in symbollist:
 
@@ -668,7 +669,7 @@ class Datainfo:
 
                 
 
-                if('80单' == isbuy):
+                if('50单' == isbuy):
                     
 
                     break
@@ -742,7 +743,7 @@ if __name__ == '__main__':
     paths.append(f'./datas/log/')
 
 
-    symbollist = ['btc','eth','bsv','bch','dot','fil','ltc','xrp','eos','etc','doge','ksm','trx','link','yfi','yfii','sushi']
+    symbollist = ['btc','eth','bsv','bch','dot','fil','ltc','dash','eos','etc','doge','ksm','trx','link','yfi','yfii','sushi']
     #将txt文件的所有内容读入到字符串str中
 
     for symbol in symbollist:
