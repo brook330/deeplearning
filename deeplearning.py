@@ -309,8 +309,8 @@ class Datainfo:
         # 设置持仓模式  Set Position mode
         result = accountAPI.get_position_mode('long_short_mode')
         # 设置杠杆倍数  Set Leverage
-        result = accountAPI.set_leverage(instId=symbol.upper()+'-USD-SWAP', lever='50', mgnMode='cross')
-        #Datainfo.saveinfo('设置100倍保证金杠杆完毕。。。')
+        result = accountAPI.set_leverage(instId=symbol.upper()+'-USD-SWAP', lever='20', mgnMode='cross')
+        #Datainfo.saveinfo('设置20倍保证金杠杆完毕。。。')
         # trade api
         tradeAPI = Trade.TradeAPI(api_key, secret_key, passphrase, False, flag)
         # 批量下单  Place Multiple Orders
@@ -336,7 +336,7 @@ class Datainfo:
 
         # 策略委托下单  Place Algo Order
         result = tradeAPI.place_algo_order(symbol.upper()+'-USD-SWAP', 'cross', 'sell', ordType='conditional',
-                                            sz='3',posSide='long', tpTriggerPx=str(float(lastprice)*1.02), tpOrdPx=str(float(lastprice)*1.02))
+                                            sz='3',posSide='long', tpTriggerPx=str(float(lastprice)*1.1), tpOrdPx=str(float(lastprice)*1.1))
         #Datainfo.saveinfo(str(datetime.now())+'设置止盈完毕。。。'+str(float(lastprice)+50))
 
 
