@@ -70,10 +70,10 @@ class Datainfo:
         all_words_sell = list(filter(lambda text: all([word in text for word in list_string_sell]), list_text ))
  
         print('总计：--->>>',len(all_words_buy) - len(all_words_sell),' 单 。。。>>>')
-        if(len(all_words_buy) - len(all_words_sell)>50):
+        if(len(all_words_buy) - len(all_words_sell)>80):
             Datainfo.saveinfo(symbol+'买单大于50单返回。。。>>>')
             
-            return '50单'
+            return '60单'
 
 
         t = time.time()
@@ -221,7 +221,7 @@ class Datainfo:
 
             
 
-            if(not(X1 >5 and X2 < -3) and X1 >0 and X2 <0 and not(Y1 >0 and Y2 < 0) and learning and dw['close'].values[-1] > dw['close'].values[-2] and dw['macd'].values[-1] > 0):
+            if(not(X1 >5 and X2 < -3) and X1 >0 and X2 <0 and not(Y1 >0 and Y2 < 0) and learning  and dw['macd'].values[-1] > dw['macd'].values[-2]):
                 print('买入')
 
                 return '买入'
@@ -316,7 +316,7 @@ class Datainfo:
         # 批量下单  Place Multiple Orders
         # 批量下单  Place Multiple Orders
         result = tradeAPI.place_multiple_orders([
-             {'instId': symbol.upper()+'-USD-SWAP', 'tdMode': 'cross', 'side': 'buy', 'ordType': 'market', 'sz': '3',
+             {'instId': symbol.upper()+'-USD-SWAP', 'tdMode': 'cross', 'side': 'buy', 'ordType': 'market', 'sz': '1',
               'posSide': 'long',
               'clOrdId': 'a12344', 'tag': 'test1210'},
     
@@ -336,11 +336,11 @@ class Datainfo:
 
         # 策略委托下单  Place Algo Order
         result = tradeAPI.place_algo_order(symbol.upper()+'-USD-SWAP', 'cross', 'sell', ordType='conditional',
-                                            sz='3',posSide='long', tpTriggerPx=str(float(lastprice)*1.1), tpOrdPx=str(float(lastprice)*1.1))
+                                            sz='1',posSide='long', tpTriggerPx=str(float(lastprice)*1.02), tpOrdPx=str(float(lastprice)*1.02))
         #Datainfo.saveinfo(str(datetime.now())+'设置止盈完毕。。。'+str(float(lastprice)+50))
 
 
-        sendtext = '买入'+symbol.upper()+'-USD-SWAP -->> 3笔，价格是'+str(lastprice)+'，设置止盈完毕。。。'+str(float(lastprice)*1.02)
+        sendtext = '买入'+symbol.upper()+'-USD-SWAP -->> 1笔，价格是'+str(lastprice)+'，设置止盈完毕。。。'+str(float(lastprice)*1.02)
         Datainfo.saveinfo(sendtext)
         Datainfo.save_finalinfo('买入价格是--》》'+str(lastprice)+'，设置止盈完毕。。。'+str(float(lastprice)*1.02))
         SendDingding.sender(sendtext)
@@ -493,12 +493,21 @@ class Datainfo:
             #声明2线程保存数据
             p1 = multiprocessing.Process(target = sch.showwindows)
             p2 = multiprocessing.Process(target = sch.okex15M_buy)
+            p3 = multiprocessing.Process(target = sch.okex5M_buy)
+            p4 = multiprocessing.Process(target = sch.okex60M_buy)
+            p5 = multiprocessing.Process(target = sch.okex240M_buy)
 
 
             #6个进程开始运行
+            p5.start()
+            p4.start()
+            p3.start()
             p2.start()
             p1.start()
 
+            p5.join()
+            p4.join()
+            p3.join()
             p2.join()
             p1.join()
             
@@ -639,7 +648,17 @@ class Datainfo:
             sys.exit(app.exec_()) # 使用exit()或者点击关闭按钮退出QApp
 
 
+        def okex5M_buy(self):
 
+
+
+            scheduler = BlockingScheduler()
+            scheduler.add_job((self.getdatainfo), 'cron', args = ['5'], minute='*/5')
+            print(scheduler.get_jobs())
+            try:
+                scheduler.start()
+            except KeyboardInterrupt:
+                scheduler.shutdown()
 
         def okex15M_buy(self):
 
@@ -647,6 +666,30 @@ class Datainfo:
             #self.getdatainfo('15')
             scheduler = BlockingScheduler()
             scheduler.add_job((self.getdatainfo), 'cron', args = ['15'], minute='*/15')
+            print(scheduler.get_jobs())
+            try:
+                scheduler.start()
+            except KeyboardInterrupt:
+                scheduler.shutdown()
+
+        def okex60M_buy(self):
+
+
+            #self.getdatainfo('15')
+            scheduler = BlockingScheduler()
+            scheduler.add_job((self.getdatainfo), 'cron', args = ['60'], hour='*/1')
+            print(scheduler.get_jobs())
+            try:
+                scheduler.start()
+            except KeyboardInterrupt:
+                scheduler.shutdown()
+
+        def okex240M_buy(self):
+
+
+            #self.getdatainfo('15')
+            scheduler = BlockingScheduler()
+            scheduler.add_job((self.getdatainfo), 'cron', args = ['240'], hour='*/4')
             print(scheduler.get_jobs())
             try:
                 scheduler.start()
@@ -667,7 +710,7 @@ class Datainfo:
 
                 
 
-                if('50单' == isbuy):
+                if('60单' == isbuy):
                     
 
                     break
