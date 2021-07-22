@@ -183,9 +183,9 @@ class Datainfo:
                     Y2 = dw['close'].values[-2]*float(dw['MATRIX'].values[-2])*float(dw['TRIX'].values[-2])
 
 
-                    if(not(X1 >5 and X2 < -3) and X1 >0 and X2 <0 and not(Y1 >0 and Y2 < 0) and dw['macd'].values[-1] > dw['macd'].values[-2]):
+                    if(not(X1 >5 and X2 < -3) and X1 >0 and X2 <0 and not(Y1 >0 and Y2 < 0) and dw['macd'].values[-1] > dw['macd'].values[-2] and dw['close'].values[-1] > dw['open'].values[-1] ):
                         print('买入')
-                        return '买入'
+                        result = '买入'
 
                     maxvalue = dw.iloc[-50:][(dw['macd'] == dw['macd'][-50:].max())]['close']
                     minvalue = dw.iloc[-50:][(dw['macd'] == dw['macd'][-50:].min())]['close']
@@ -350,18 +350,24 @@ class Datainfo:
         def run():
             sch = Datainfo.windowsshow()
 
-            #声明4进程保存数据
+            #声明6进程保存数据
             p1 = multiprocessing.Process(target = sch.showwindows)
             p2 = multiprocessing.Process(target = sch.okex5M_buy)
             p3 = multiprocessing.Process(target = sch.okex15M_buy)
             p4 = multiprocessing.Process(target = sch.okex3M_buy)
+            p5 = multiprocessing.Process(target = sch.okex60M_buy)
+            p6 = multiprocessing.Process(target = sch.okex240M_buy)
 
-            #4个进程开始运行
+            #6个进程开始运行
+            p6.start()
+            p5.start()
             p4.start()
             p3.start()
             p2.start()
             p1.start()
 
+            p6.join()
+            p5.join()
             p4.join()
             p3.join()
             p2.join()
@@ -540,12 +546,24 @@ class Datainfo:
             except KeyboardInterrupt:
                 scheduler.shutdown()
 
-        def okex1M_buy(self):
+        def okex60M_buy(self):
 
 
             #self.getdatainfo('15')
             scheduler = BlockingScheduler()
-            scheduler.add_job((self.getdatainfo), 'cron', args = ['1'], minute='*/1')
+            scheduler.add_job((self.getdatainfo), 'cron', args = ['60'], hour='*/1')
+            print(scheduler.get_jobs())
+            try:
+                scheduler.start()
+            except KeyboardInterrupt:
+                scheduler.shutdown()
+
+        def okex240M_buy(self):
+
+
+            #self.getdatainfo('15')
+            scheduler = BlockingScheduler()
+            scheduler.add_job((self.getdatainfo), 'cron', args = ['240'], hour='*/4')
             print(scheduler.get_jobs())
             try:
                 scheduler.start()
