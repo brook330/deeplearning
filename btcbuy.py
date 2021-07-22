@@ -183,7 +183,7 @@ class Datainfo:
                     Y2 = dw['close'].values[-2]*float(dw['MATRIX'].values[-2])*float(dw['TRIX'].values[-2])
 
 
-                    if(not(X1 >5 and X2 < -3) and X1 >0 and X2 <0 and not(Y1 >0 and Y2 < 0) and dw['macd'].values[-1] > dw['macd'].values[-2] and dw['close'].values[-1] > dw['open'].values[-1] ):
+                    if(not(X1 >5 and X2 < -3) and X1 >0 and X2 <0 and not(Y1 >0 and Y2 < 0) and dw['macd'].values[-2] > dw['macd'].values[-3] and dw['close'].values[-2] > dw['open'].values[-2] ):
                         print('买入')
                         result = '买入'
 
@@ -196,10 +196,10 @@ class Datainfo:
                     buyVolumes = df['buyVolumes'].tail(20).values
                     sellVolumes = df['sellVolumes'].tail(20).values
 
-                    if(dw['close'].values[-1] > value_618 and dw['close'].values[-1] < value_192  and dw['close'].values[-1] > dw['open'].values[-1] and (sum(buyVolumes)/len(buyVolumes)) / (sum(sellVolumes)/len(sellVolumes)) > 1.01):
+                    if(dw['close'].values[-2] > value_618 and dw['close'].values[-2] < value_192  and dw['close'].values[-2] > dw['open'].values[-2] and (sum(buyVolumes)/len(buyVolumes)) / (sum(sellVolumes)/len(sellVolumes)) > 1.01):
                         print('买入')
                         result = '买入'
-                    if(dw['macd'].values[-1] == dw['macd'][-40:].min() and dw['macd'].values[-1] < 0):
+                    if(dw['macd'].values[-2] == dw['macd'][-50:].min() and dw['macd'].values[-2] < 0):
                         print('买入')
                         result = '买入'
                     else:
