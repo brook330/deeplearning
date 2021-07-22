@@ -52,7 +52,8 @@ class Datainfo:
 
     def eth_isbuy(minute,symbol):
 
-        result = ''
+        result = '不买卖'
+        ones = ''
 
         for i in range(10000):
 
@@ -183,10 +184,10 @@ class Datainfo:
                     Y2 = dw['close'].values[-2]*float(dw['MATRIX'].values[-2])*float(dw['TRIX'].values[-2])
 
 
-                    if(not(X1 >5 and X2 < -3) and X1 >0 and X2 <0 and not(Y1 >0 and Y2 < 0) and dw['macd'].values[-2] > dw['macd'].values[-3] and dw['close'].values[-2] > dw['open'].values[-2] ):
-                        print('买入')
+                    if(not(X1 >5 and X2 < -3) and X1 >0 and X2 <0 and not(Y1 >0 and Y2 < 0) and dw['macd'].values[-1] > dw['macd'].values[-2] and dw['close'].values[-1] > dw['open'].values[-1] ):
                         result = '买入'
-
+                        ones = '条件1'
+                    
                     maxvalue = dw.iloc[-50:][(dw['macd'] == dw['macd'][-50:].max())]['close']
                     minvalue = dw.iloc[-50:][(dw['macd'] == dw['macd'][-50:].min())]['close']
                     value = maxvalue.values - minvalue.values
@@ -196,16 +197,18 @@ class Datainfo:
                     buyVolumes = df['buyVolumes'].tail(20).values
                     sellVolumes = df['sellVolumes'].tail(20).values
 
-                    if(dw['close'].values[-2] > value_618 and dw['close'].values[-2] < value_192  and dw['close'].values[-2] > dw['open'].values[-2] and (sum(buyVolumes)/len(buyVolumes)) / (sum(sellVolumes)/len(sellVolumes)) > 1.01):
-                        print('买入')
+                    if(dw['close'].values[-1] > value_618 and dw['close'].values[-1] < value_192  and dw['close'].values[-1] > dw['open'].values[-1] and (sum(buyVolumes)/len(buyVolumes)) / (sum(sellVolumes)/len(sellVolumes)) > 1.01):
                         result = '买入'
+                        ones = '条件2'
                     if(dw['macd'].values[-2] == dw['macd'][-50:].min() and dw['macd'].values[-2] < 0 and dw['macd'].values[-2] < dw['macd'].values[-1]):
-                        print('买入')
                         result = '买入'
+                        ones = '条件3'
                 break
             except:
                 time.sleep(5)
                 continue
+        print(str(datetime.now())+'--->>>'+ones+'--->>>'+result)
+        Datainfo.saveinfo('--->>>'+ones+'--->>>'+result)
         return result
 
 
@@ -320,7 +323,6 @@ class Datainfo:
 
 
         sendtext = '买入'+symbol.upper()+'-USD-SWAP -->> 2笔，价格是'+str(lastprice)+'，设置止盈完毕。。。'+str(float(lastprice)+100)
-        Datainfo.saveinfo(sendtext)
         Datainfo.save_finalinfo('买入价格是--》》'+str(lastprice)+'，设置止盈完毕。。。'+str(float(lastprice)+100))
         SendDingding.sender(sendtext)
 
