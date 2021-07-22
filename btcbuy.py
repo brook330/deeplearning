@@ -188,15 +188,15 @@ class Datainfo:
             minvalue = dw.iloc[-50:][(dw['macd'] == dw['macd'][-50:].min())]['close']
             value = maxvalue.values - minvalue.values
             value_618 = maxvalue.values - value * 0.618
-            value_382 = maxvalue.values - value * 0.382
+            value_191 = maxvalue.values - value * 0.191
 
             buyVolumes = df['buyVolumes'].tail(20).values
             sellVolumes = df['sellVolumes'].tail(20).values
 
-            if(dw['close'].values[-1] > value_618 and dw['close'].values[-1] < value_382  and (sum(buyVolumes)/len(buyVolumes)) / (sum(sellVolumes)/len(sellVolumes)) > 1.01):
+            if(dw['close'].values[-1] > value_618 and dw['close'].values[-1] < value_191  and dw['close'].values[-1] > dw['open'].values[-1] and (sum(buyVolumes)/len(buyVolumes)) / (sum(sellVolumes)/len(sellVolumes)) > 1.01):
                 print('买入')
                 return '买入'
-            if(dw['macd'].values[-1] == dw['macd'][-50:].min() and dw['close'].values[-1] > dw['open'].values[-1] and dw['macd'].values[-1] < 0):
+            if(dw['macd'].values[-1] == dw['macd'][-50:].min() and dw['macd'].values[-1] < 0):
                 print('买入')
                 return '买入'
             else:
@@ -344,22 +344,15 @@ class Datainfo:
 
             #声明2线程保存数据
             p1 = multiprocessing.Process(target = sch.showwindows)
-            p2 = multiprocessing.Process(target = sch.okex15M_buy)
-            p3 = multiprocessing.Process(target = sch.okex5M_buy)
-            p4 = multiprocessing.Process(target = sch.okex60M_buy)
-            p5 = multiprocessing.Process(target = sch.okex240M_buy)
+            p2 = multiprocessing.Process(target = sch.okex5M_buy)
+   
 
 
-            #6个进程开始运行
-            p5.start()
-            p4.start()
-            p3.start()
+            #2个进程开始运行
+
             p2.start()
             p1.start()
 
-            p5.join()
-            p4.join()
-            p3.join()
             p2.join()
             p1.join()
             
@@ -524,24 +517,24 @@ class Datainfo:
             except KeyboardInterrupt:
                 scheduler.shutdown()
 
-        def okex60M_buy(self):
+        def okex3M_buy(self):
 
 
             #self.getdatainfo('15')
             scheduler = BlockingScheduler()
-            scheduler.add_job((self.getdatainfo), 'cron', args = ['60'], hour='*/1')
+            scheduler.add_job((self.getdatainfo), 'cron', args = ['3'], minute='*/3')
             print(scheduler.get_jobs())
             try:
                 scheduler.start()
             except KeyboardInterrupt:
                 scheduler.shutdown()
 
-        def okex240M_buy(self):
+        def okex1M_buy(self):
 
 
             #self.getdatainfo('15')
             scheduler = BlockingScheduler()
-            scheduler.add_job((self.getdatainfo), 'cron', args = ['240'], hour='*/4')
+            scheduler.add_job((self.getdatainfo), 'cron', args = ['1'], minute='*/1')
             print(scheduler.get_jobs())
             try:
                 scheduler.start()
