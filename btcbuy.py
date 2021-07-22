@@ -199,12 +199,9 @@ class Datainfo:
                     if(dw['close'].values[-2] > value_618 and dw['close'].values[-2] < value_192  and dw['close'].values[-2] > dw['open'].values[-2] and (sum(buyVolumes)/len(buyVolumes)) / (sum(sellVolumes)/len(sellVolumes)) > 1.01):
                         print('买入')
                         result = '买入'
-                    if(dw['macd'].values[-2] == dw['macd'][-50:].min() and dw['macd'].values[-2] < 0):
+                    if(dw['macd'].values[-2] == dw['macd'][-50:].min() and dw['macd'].values[-2] < 0 and dw['macd'].values[-2] < dw['macd'].values[-1]):
                         print('买入')
                         result = '买入'
-                    else:
-                        print('不买卖')
-                        result = '不买卖'
                 break
             except:
                 time.sleep(5)
