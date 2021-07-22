@@ -188,12 +188,12 @@ class Datainfo:
             minvalue = dw.iloc[-50:][(dw['macd'] == dw['macd'][-50:].min())]['close']
             value = maxvalue.values - minvalue.values
             value_618 = maxvalue.values - value * 0.618
-            value_191 = maxvalue.values - value * 0.191
+  
 
             buyVolumes = df['buyVolumes'].tail(20).values
             sellVolumes = df['sellVolumes'].tail(20).values
 
-            if(dw['close'].values[-1] > value_618 and dw['close'].values[-1] < value_191  and dw['close'].values[-1] > dw['open'].values[-1] and (sum(buyVolumes)/len(buyVolumes)) / (sum(sellVolumes)/len(sellVolumes)) > 1.01):
+            if(dw['close'].values[-1] > value_618 and dw['macd'].values[-1] > dw['macd'].values[-2]  and dw['close'].values[-1] > dw['open'].values[-1] and (sum(buyVolumes)/len(buyVolumes)) / (sum(sellVolumes)/len(sellVolumes)) > 1.01):
                 print('买入')
                 return '买入'
             if(dw['macd'].values[-1] == dw['macd'][-50:].min() and dw['macd'].values[-1] < 0):
@@ -290,7 +290,7 @@ class Datainfo:
         # 批量下单  Place Multiple Orders
         # 批量下单  Place Multiple Orders
         result = tradeAPI.place_multiple_orders([
-             {'instId': symbol.upper()+'-USD-SWAP', 'tdMode': 'cross', 'side': 'buy', 'ordType': 'market', 'sz': '1',
+             {'instId': symbol.upper()+'-USD-SWAP', 'tdMode': 'cross', 'side': 'buy', 'ordType': 'market', 'sz': '2',
               'posSide': 'long',
               'clOrdId': 'a12344', 'tag': 'test1210'},
     
@@ -310,11 +310,11 @@ class Datainfo:
 
         # 策略委托下单  Place Algo Order
         result = tradeAPI.place_algo_order(symbol.upper()+'-USD-SWAP', 'cross', 'sell', ordType='conditional',
-                                            sz='1',posSide='long', tpTriggerPx=str(float(lastprice)+100), tpOrdPx=str(float(lastprice)+100))
+                                            sz='2',posSide='long', tpTriggerPx=str(float(lastprice)+100), tpOrdPx=str(float(lastprice)+100))
         #Datainfo.saveinfo(str(datetime.now())+'设置止盈完毕。。。'+str(float(lastprice)+50))
 
 
-        sendtext = '买入'+symbol.upper()+'-USD-SWAP -->> 1笔，价格是'+str(lastprice)+'，设置止盈完毕。。。'+str(float(lastprice)+100)
+        sendtext = '买入'+symbol.upper()+'-USD-SWAP -->> 2笔，价格是'+str(lastprice)+'，设置止盈完毕。。。'+str(float(lastprice)+100)
         Datainfo.saveinfo(sendtext)
         Datainfo.save_finalinfo('买入价格是--》》'+str(lastprice)+'，设置止盈完毕。。。'+str(float(lastprice)+100))
         SendDingding.sender(sendtext)
@@ -345,14 +345,15 @@ class Datainfo:
             #声明2线程保存数据
             p1 = multiprocessing.Process(target = sch.showwindows)
             p2 = multiprocessing.Process(target = sch.okex5M_buy)
-   
+            p3 = multiprocessing.Process(target = sch.okex15M_buy)
 
 
             #2个进程开始运行
-
+            p3.start()
             p2.start()
             p1.start()
 
+            p3.join()
             p2.join()
             p1.join()
             
