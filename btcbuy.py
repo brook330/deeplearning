@@ -184,7 +184,7 @@ class Datainfo:
                     Y2 = dw['close'].values[-2]*float(dw['MATRIX'].values[-2])*float(dw['TRIX'].values[-2])
 
 
-                    if(not(X1 >5 and X2 < -3) and X1 >0 and X2 <0 and not(Y1 >0 and Y2 < 0) and dw['macd'].values[-1] > dw['macd'].values[-2] and dw['close'].values[-1] > dw['open'].values[-1] ):
+                    if(not(X1 >5 and X2 < -3) and X1 >0 and X2 <0 and not(Y1 >0 and Y2 < 0) and dw['macd'].values[-1] > dw['macd'].values[-2] ):
                         result = '买入'
                         ones = '满足条件1'
                     
@@ -200,7 +200,7 @@ class Datainfo:
                     if(dw['close'].values[-1] > value_618 and dw['close'].values[-1] < value_192  and dw['close'].values[-1] > dw['open'].values[-1] and (sum(buyVolumes)/len(buyVolumes)) / (sum(sellVolumes)/len(sellVolumes)) > 1.01):
                         result = '买入'
                         ones = '满足条件2'
-                    if(dw['macd'].values[-2] == dw['macd'][-50:].min() and dw['macd'].values[-2] < 0 and dw['macd'].values[-2] < dw['macd'].values[-1]):
+                    if(dw['macd'].values[-2] == dw['macd'][-30:].min() and dw['macd'].values[-2] < 0 and dw['macd'].values[-2] < dw['macd'].values[-1]):
                         result = '买入'
                         ones = '满足条件3'
                 break
@@ -379,11 +379,11 @@ class Datainfo:
 
         def setupUi(self, MainWindow):
             MainWindow.setObjectName("MainWindow")
-            MainWindow.resize(800, 600)
+            MainWindow.resize(1920, 1080)
             self.centralwidget = QtWidgets.QWidget(MainWindow)
             self.centralwidget.setObjectName("centralwidget")
             self.verticalLayoutWidget = QtWidgets.QWidget(self.centralwidget)
-            self.verticalLayoutWidget.setGeometry(QtCore.QRect(0, 0, 801, 551))
+            self.verticalLayoutWidget.setGeometry(QtCore.QRect(0, 0, 1920, 951))
             self.verticalLayoutWidget.setObjectName("verticalLayoutWidget")
             self.verticalLayout = QtWidgets.QVBoxLayout(self.verticalLayoutWidget)
             self.verticalLayout.setContentsMargins(0, 0, 0, 0)
@@ -401,14 +401,14 @@ class Datainfo:
 
             self.textBrowserone = QtWidgets.QTextBrowser(self.verticalLayoutWidget)
             self.textBrowserone.setObjectName("textBrowser")
-            self.textBrowserone.setStyleSheet("background-color:#4e72b8;font-size:20px; font-family:'行楷';font-weight:bold;")
+            self.textBrowserone.setStyleSheet("background-color:#4e72b8;font-size:15px; font-family:'行楷';font-weight:bold;")
             self.textBrowserone.setAlignment(Qt.AlignCenter)
             self.textBrowserone.verticalScrollBar().setValue(self.textBrowserone.maximumHeight())
             self.verticalLayout.addWidget(self.textBrowserone)
 
             self.textBrowsertwo = QtWidgets.QTextBrowser(self.verticalLayoutWidget)
             self.textBrowsertwo.setObjectName("textBrowser")
-            self.textBrowsertwo.setStyleSheet("background-color:#9b95c9;font-size:20px; font-family:'行楷';font-weight:bold;")
+            self.textBrowsertwo.setStyleSheet("background-color:#9b95c9;font-size:15px; font-family:'行楷';font-weight:bold;")
             self.textBrowsertwo.setAlignment(Qt.AlignCenter)
             self.textBrowsertwo.verticalScrollBar().setValue(self.textBrowsertwo.maximumHeight())
             self.verticalLayout.addWidget(self.textBrowsertwo)
@@ -416,7 +416,7 @@ class Datainfo:
 
             MainWindow.setCentralWidget(self.centralwidget)
             self.menubar = QtWidgets.QMenuBar(MainWindow)
-            self.menubar.setGeometry(QtCore.QRect(0, 0, 800, 23))
+            self.menubar.setGeometry(QtCore.QRect(0, 0, 1920, 23))
             self.menubar.setObjectName("menubar")
             self.menu = QtWidgets.QMenu(self.menubar)
             self.menu.setObjectName("menu")
@@ -463,14 +463,14 @@ class Datainfo:
           
 
             f_day = open(f'./datas/log/day_buy.txt',"r",encoding='utf-8')   #设置文件对象
-            day_buy = f_day.read()[-800:]     #将txt文件的所有内容读入到字符串str中
+            day_buy = f_day.read()[-1600:]     #将txt文件的所有内容读入到字符串str中
             f_day.close()   #将文件关闭
             if(day_buy):
                 self.textBrowsertwo.clear()
                 self.textBrowsertwo.append(day_buy)
 
             f_info = open(f'./datas/log/infodata.txt',"r",encoding='utf-8')   #设置文件对象
-            infodata = f_info.read()[-800:]     #将txt文件的所有内容读入到字符串str中
+            infodata = f_info.read()[-1600:]     #将txt文件的所有内容读入到字符串str中
             f_info.close()   #将文件关闭
             if(infodata):
                 self.textBrowserone.clear()
