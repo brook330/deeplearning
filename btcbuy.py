@@ -186,7 +186,7 @@ class Datainfo:
 
                     if(not(X1 >5 and X2 < -3) and X1 >0 and X2 <0 and not(Y1 >0 and Y2 < 0) and dw['macd'].values[-1] > dw['macd'].values[-2] and dw['close'].values[-1] > dw['open'].values[-1] ):
                         result = '买入'
-                        ones = '条件1'
+                        ones = '满足条件1'
                     
                     maxvalue = dw.iloc[-50:][(dw['macd'] == dw['macd'][-50:].max())]['close']
                     minvalue = dw.iloc[-50:][(dw['macd'] == dw['macd'][-50:].min())]['close']
@@ -199,16 +199,16 @@ class Datainfo:
 
                     if(dw['close'].values[-1] > value_618 and dw['close'].values[-1] < value_192  and dw['close'].values[-1] > dw['open'].values[-1] and (sum(buyVolumes)/len(buyVolumes)) / (sum(sellVolumes)/len(sellVolumes)) > 1.01):
                         result = '买入'
-                        ones = '条件2'
+                        ones = '满足条件2'
                     if(dw['macd'].values[-2] == dw['macd'][-50:].min() and dw['macd'].values[-2] < 0 and dw['macd'].values[-2] < dw['macd'].values[-1]):
                         result = '买入'
-                        ones = '条件3'
+                        ones = '满足条件3'
                 break
             except:
                 time.sleep(5)
                 continue
         print(str(datetime.now())+'--->>>'+ones+'--->>>'+result)
-        Datainfo.saveinfo('--->>>'+ones+'--->>>'+result)
+        Datainfo.saveinfo('--->>>'+ones+'--->>>'+result+'--->>>')
         return result
 
 
