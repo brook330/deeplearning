@@ -52,156 +52,164 @@ class Datainfo:
 
     def eth_isbuy(minute,symbol):
 
+        result = ''
+
+        for i in range(10000):
+
+            try:
+                t = time.time()
+
+                #print (t)                       #原始时间数据
+                #print (int(t))                  #秒级时间戳
+                #print (int(round(t * 1000)))    #毫秒级时间戳
+                #print (int(round(t * 1000000))) #微秒级时间戳
+                tt = str((int(t * 1000)))
+                ttt = str(int(round(t * 1000)))
+
+                #=====获取vol数据
+                headers = {
+                    'authority': 'www.okex.com',
+                    'sec-ch-ua': '^\\^',
+                    'timeout': '10000',
+                    'x-cdn': 'https://static.okex.com',
+                    'devid': '7f1dea77-90cd-4746-a13f-a98bac4a333b',
+                    'accept-language': 'zh-CN',
+                    'sec-ch-ua-mobile': '?0',
+                    'user-agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.77 Safari/537.36',
+                    'accept': 'application/json',
+                    'x-utc': '8',
+                    'app-type': 'web',
+                    'sec-fetch-site': 'same-origin',
+                    'sec-fetch-mode': 'cors',
+                    'sec-fetch-dest': 'empty',
+                    'referer': 'https://www.okex.com/markets/swap-data/'+symbol+'-usd',
+                    'cookie': '_gcl_au=1.1.1849415495.'+str(tt)+'; _ga=GA1.2.1506507962.'+str(tt)+'; first_ref=https^%^3A^%^2F^%^2Fwww.okex.com^%^2Fcaptcha^%^3Fto^%^3DaHR0cHM6Ly93d3cub2tleC5jb20vbWFya2V0cy9zd2FwLWRhdGEvZXRoLXVzZA^%^3D^%^3D; locale=zh_CN; _gid=GA1.2.802198982.'+str(tt)+'; amp_56bf9d=gqC_GMDGl4q5Tk-BJhT-oP...1f8fiso4n.1f8fiu841.1.2.3',
+                }
+
+                params = (
+                    ('t', str(ttt)),
+                    ('unitType', '0'),
+                )
+
+                response = r.get('https://www.okex.com/v3/futures/pc/market/takerTradeVolume/'+symbol.upper()+'', headers=headers, params=params)
+
+                if response.cookies.get_dict(): #保持cookie有效 
+                        s=r.session()
+                        c = r.cookies.RequestsCookieJar()#定义一个cookie对象
+                        c.set('cookie-name', 'cookie-value')#增加cookie的值
+                        s.cookies.update(c)#更新s的cookie
+                        s.get(url = 'https://www.okex.com/v3/futures/pc/market/takerTradeVolume/'+symbol.upper()+'?t='+str(ttt)+'&unitType=0')
+                df = pd.DataFrame(response.json()['data'])
+
+                df['timestamps'] = list(map(float, df['timestamps'].values))
+                df['timestamps'] = pd.to_datetime(df['timestamps'],unit='ms')+pd.to_timedelta('8 hours')
+
+                #列倒序内容排列
+                df = df.iloc[:,::-1]
 
 
-        t = time.time()
-
-        #print (t)                       #原始时间数据
-        #print (int(t))                  #秒级时间戳
-        #print (int(round(t * 1000)))    #毫秒级时间戳
-        #print (int(round(t * 1000000))) #微秒级时间戳
-        tt = str((int(t * 1000)))
-        ttt = str(int(round(t * 1000)))
-
-        #=====获取vol数据
-        headers = {
-            'authority': 'www.okex.com',
-            'sec-ch-ua': '^\\^',
-            'timeout': '10000',
-            'x-cdn': 'https://static.okex.com',
-            'devid': '7f1dea77-90cd-4746-a13f-a98bac4a333b',
-            'accept-language': 'zh-CN',
-            'sec-ch-ua-mobile': '?0',
-            'user-agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.77 Safari/537.36',
-            'accept': 'application/json',
-            'x-utc': '8',
-            'app-type': 'web',
-            'sec-fetch-site': 'same-origin',
-            'sec-fetch-mode': 'cors',
-            'sec-fetch-dest': 'empty',
-            'referer': 'https://www.okex.com/markets/swap-data/'+symbol+'-usd',
-            'cookie': '_gcl_au=1.1.1849415495.'+str(tt)+'; _ga=GA1.2.1506507962.'+str(tt)+'; first_ref=https^%^3A^%^2F^%^2Fwww.okex.com^%^2Fcaptcha^%^3Fto^%^3DaHR0cHM6Ly93d3cub2tleC5jb20vbWFya2V0cy9zd2FwLWRhdGEvZXRoLXVzZA^%^3D^%^3D; locale=zh_CN; _gid=GA1.2.802198982.'+str(tt)+'; amp_56bf9d=gqC_GMDGl4q5Tk-BJhT-oP...1f8fiso4n.1f8fiu841.1.2.3',
-        }
-
-        params = (
-            ('t', str(ttt)),
-            ('unitType', '0'),
-        )
-
-        response = r.get('https://www.okex.com/v3/futures/pc/market/takerTradeVolume/'+symbol.upper()+'', headers=headers, params=params)
-
-        if response.cookies.get_dict(): #保持cookie有效 
-                s=r.session()
-                c = r.cookies.RequestsCookieJar()#定义一个cookie对象
-                c.set('cookie-name', 'cookie-value')#增加cookie的值
-                s.cookies.update(c)#更新s的cookie
-                s.get(url = 'https://www.okex.com/v3/futures/pc/market/takerTradeVolume/'+symbol.upper()+'?t='+str(ttt)+'&unitType=0')
-        df = pd.DataFrame(response.json()['data'])
-
-        df['timestamps'] = list(map(float, df['timestamps'].values))
-        df['timestamps'] = pd.to_datetime(df['timestamps'],unit='ms')+pd.to_timedelta('8 hours')
-
-        #列倒序内容排列
-        df = df.iloc[:,::-1]
 
 
+                df.to_csv(f'./datas/okex/'+symbol+'/old_'+symbol+'.csv',index=False)
 
 
-        df.to_csv(f'./datas/okex/'+symbol+'/old_'+symbol+'.csv',index=False)
-
-
-        #===获取close数据
+                #===获取close数据
 
         
 
 
-        headers = {
-        'authority': 'www.okex.com',
-        'sec-ch-ua': '^\\^',
-        'timeout': '10000',
-        'x-cdn': 'https://static.okex.com',
-        'devid': '7f1dea77-90cd-4746-a13f-a98bac4a333b',
-        'accept-language': 'zh-CN',
-        'sec-ch-ua-mobile': '?0',
-        'user-agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.77 Safari/537.36',
-        'accept': 'application/json',
-        'x-utc': '8',
-        'app-type': 'web',
-        'sec-fetch-site': 'same-origin',
-        'sec-fetch-mode': 'cors',
-        'sec-fetch-dest': 'empty',
-        'referer': 'https://www.okex.com/markets/swap-info/'+symbol+'-usd',
-        'cookie': 'locale=zh_CN; _gcl_au=1.1.1849415495.'+str(tt)+'; _ga=GA1.2.1506507962.'+str(tt)+'; _gid=GA1.2.256681666.'+str(tt)+'; first_ref=https^%^3A^%^2F^%^2Fwww.okex.com^%^2Fcaptcha^%^3Fto^%^3DaHR0cHM6Ly93d3cub2tleC5jb20vbWFya2V0cy9zd2FwLWRhdGEvZXRoLXVzZA^%^3D^%^3D; _gat_UA-35324627-3=1; amp_56bf9d=gqC_GMDGl4q5Tk-BJhT-oP...1f711b989.1f711fv58.0.2.2',
-        }
+                headers = {
+                'authority': 'www.okex.com',
+                'sec-ch-ua': '^\\^',
+                'timeout': '10000',
+                'x-cdn': 'https://static.okex.com',
+                'devid': '7f1dea77-90cd-4746-a13f-a98bac4a333b',
+                'accept-language': 'zh-CN',
+                'sec-ch-ua-mobile': '?0',
+                'user-agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.77 Safari/537.36',
+                'accept': 'application/json',
+                'x-utc': '8',
+                'app-type': 'web',
+                'sec-fetch-site': 'same-origin',
+                'sec-fetch-mode': 'cors',
+                'sec-fetch-dest': 'empty',
+                'referer': 'https://www.okex.com/markets/swap-info/'+symbol+'-usd',
+                'cookie': 'locale=zh_CN; _gcl_au=1.1.1849415495.'+str(tt)+'; _ga=GA1.2.1506507962.'+str(tt)+'; _gid=GA1.2.256681666.'+str(tt)+'; first_ref=https^%^3A^%^2F^%^2Fwww.okex.com^%^2Fcaptcha^%^3Fto^%^3DaHR0cHM6Ly93d3cub2tleC5jb20vbWFya2V0cy9zd2FwLWRhdGEvZXRoLXVzZA^%^3D^%^3D; _gat_UA-35324627-3=1; amp_56bf9d=gqC_GMDGl4q5Tk-BJhT-oP...1f711b989.1f711fv58.0.2.2',
+                }
 
-        params = (
-        ('granularity', str(int(minute)*60)),
-        ('size', '1000'),
-        ('t', str(ttt)),
-        )
-        response = r.get('https://www.okex.com/v2/perpetual/pc/public/instruments/'+symbol.upper()+'-USD-SWAP/candles', headers=headers, params=params)
+                params = (
+                ('granularity', str(int(minute)*60)),
+                ('size', '1000'),
+                ('t', str(ttt)),
+                )
+                response = r.get('https://www.okex.com/v2/perpetual/pc/public/instruments/'+symbol.upper()+'-USD-SWAP/candles', headers=headers, params=params)
 
-        if response.cookies.get_dict(): #保持cookie有效 
-                s=r.session()
-                c = r.cookies.RequestsCookieJar()#定义一个cookie对象
-                c.set('cookie-name', 'cookie-value')#增加cookie的值
-                s.cookies.update(c)#更新s的cookie
-                s.get(url = 'https://www.okex.com/v2/perpetual/pc/public/instruments/'+symbol.upper()+'-USD-SWAP/candles?granularity=900&size=1000&t='+str(ttt))
-        dw = pd.DataFrame(eval(json.dumps(response.json()))['data'])
-        #print(df)
-        dw.columns = ['timestamps','open','high','low','close','vol','p']
-        datelist = []
-        for timestamp in dw['timestamps']:
-            datelist.append(timestamp.split('.000Z')[0].replace('T',' '))
-        dw['timestamps'] = datelist
-        dw['timestamps'] = pd.to_datetime(dw['timestamps'])+pd.to_timedelta('8 hours')
-        #df['timestamps'] = df['timestamps'].apply(lambda x:time.mktime(time.strptime(str(x),'%Y-%m-%d %H:%M:%S')))
-        #print(dw)
-        dw['vol'] = list(map(float, dw['vol'].values))
-        dw['close'] = list(map(float, dw['close'].values))
+                if response.cookies.get_dict(): #保持cookie有效 
+                        s=r.session()
+                        c = r.cookies.RequestsCookieJar()#定义一个cookie对象
+                        c.set('cookie-name', 'cookie-value')#增加cookie的值
+                        s.cookies.update(c)#更新s的cookie
+                        s.get(url = 'https://www.okex.com/v2/perpetual/pc/public/instruments/'+symbol.upper()+'-USD-SWAP/candles?granularity=900&size=1000&t='+str(ttt))
+                dw = pd.DataFrame(eval(json.dumps(response.json()))['data'])
+                #print(df)
+                dw.columns = ['timestamps','open','high','low','close','vol','p']
+                datelist = []
+                for timestamp in dw['timestamps']:
+                    datelist.append(timestamp.split('.000Z')[0].replace('T',' '))
+                dw['timestamps'] = datelist
+                dw['timestamps'] = pd.to_datetime(dw['timestamps'])+pd.to_timedelta('8 hours')
+                #df['timestamps'] = df['timestamps'].apply(lambda x:time.mktime(time.strptime(str(x),'%Y-%m-%d %H:%M:%S')))
+                #print(dw)
+                dw['vol'] = list(map(float, dw['vol'].values))
+                dw['close'] = list(map(float, dw['close'].values))
         
-        dw.to_csv(f'./datas/okex/'+symbol+'/close.csv',index = False)
-        time.sleep(int(minute))
-        dw = pd.read_csv(f'./datas/okex/'+symbol+'/close.csv')
-        time.sleep(int(minute))
+                dw.to_csv(f'./datas/okex/'+symbol+'/close.csv',index = False)
+                time.sleep(int(minute))
+                dw = pd.read_csv(f'./datas/okex/'+symbol+'/close.csv')
+                time.sleep(int(minute))
 
-        Datainfo.getfulldata(dw,symbol)
+                Datainfo.getfulldata(dw,symbol)
 
 
-        #===判断是否买入或者卖出
+                #===判断是否买入或者卖出
         
-        #df = pd.read_csv(f'./datas/okex/'+symbol+'/old_'+symbol+'.csv')
+                #df = pd.read_csv(f'./datas/okex/'+symbol+'/old_'+symbol+'.csv')
 
-        if(dw['vol'].values[-1] and dw['p'].values[-1] and dw['vol'].values[-2] and dw['p'].values[-2]):
-            X1 = dw['close'].values[-1]/dw['vol'].values[-1]*dw['p'].values[-1]/dw['MA'].values[-1]*dw['obv'].values[-1]/dw['maobv'].values[-1]*dw['TRIX'].values[-1]*dw['MATRIX'].values[-1]*dw['close5'].values[-1]/dw['close135'].values[-1]*dw['macd'].values[-1]
-            X2 = dw['close'].values[-2]/dw['vol'].values[-2]*dw['p'].values[-2]/dw['MA'].values[-2]*dw['obv'].values[-2]/dw['maobv'].values[-2]*dw['TRIX'].values[-2]*dw['MATRIX'].values[-2]*dw['close5'].values[-2]/dw['close135'].values[-2]*dw['macd'].values[-2]
+                if(dw['vol'].values[-1] and dw['p'].values[-1] and dw['vol'].values[-2] and dw['p'].values[-2]):
+                    X1 = dw['close'].values[-1]/dw['vol'].values[-1]*dw['p'].values[-1]/dw['MA'].values[-1]*dw['obv'].values[-1]/dw['maobv'].values[-1]*dw['TRIX'].values[-1]*dw['MATRIX'].values[-1]*dw['close5'].values[-1]/dw['close135'].values[-1]*dw['macd'].values[-1]
+                    X2 = dw['close'].values[-2]/dw['vol'].values[-2]*dw['p'].values[-2]/dw['MA'].values[-2]*dw['obv'].values[-2]/dw['maobv'].values[-2]*dw['TRIX'].values[-2]*dw['MATRIX'].values[-2]*dw['close5'].values[-2]/dw['close135'].values[-2]*dw['macd'].values[-2]
 
-            Y1 = dw['close'].values[-1]*float(dw['MATRIX'].values[-1])*float(dw['TRIX'].values[-1])
-            Y2 = dw['close'].values[-2]*float(dw['MATRIX'].values[-2])*float(dw['TRIX'].values[-2])
+                    Y1 = dw['close'].values[-1]*float(dw['MATRIX'].values[-1])*float(dw['TRIX'].values[-1])
+                    Y2 = dw['close'].values[-2]*float(dw['MATRIX'].values[-2])*float(dw['TRIX'].values[-2])
 
 
-            if(not(X1 >5 and X2 < -3) and X1 >0 and X2 <0 and not(Y1 >0 and Y2 < 0) and dw['macd'].values[-1] > dw['macd'].values[-2]):
-                print('买入')
-                return '买入'
+                    if(not(X1 >5 and X2 < -3) and X1 >0 and X2 <0 and not(Y1 >0 and Y2 < 0) and dw['macd'].values[-1] > dw['macd'].values[-2]):
+                        print('买入')
+                        return '买入'
 
-            maxvalue = dw.iloc[-50:][(dw['macd'] == dw['macd'][-50:].max())]['close']
-            minvalue = dw.iloc[-50:][(dw['macd'] == dw['macd'][-50:].min())]['close']
-            value = maxvalue.values - minvalue.values
-            value_618 = maxvalue.values - value * 0.618
-  
+                    maxvalue = dw.iloc[-50:][(dw['macd'] == dw['macd'][-50:].max())]['close']
+                    minvalue = dw.iloc[-50:][(dw['macd'] == dw['macd'][-50:].min())]['close']
+                    value = maxvalue.values - minvalue.values
+                    value_618 = maxvalue.values - value * 0.618
+                    value_192 = maxvalue.values - value * 0.192
 
-            buyVolumes = df['buyVolumes'].tail(20).values
-            sellVolumes = df['sellVolumes'].tail(20).values
+                    buyVolumes = df['buyVolumes'].tail(20).values
+                    sellVolumes = df['sellVolumes'].tail(20).values
 
-            if(dw['close'].values[-1] > value_618 and dw['macd'].values[-1] > dw['macd'].values[-2]  and dw['close'].values[-1] > dw['open'].values[-1] and (sum(buyVolumes)/len(buyVolumes)) / (sum(sellVolumes)/len(sellVolumes)) > 1.01):
-                print('买入')
-                return '买入'
-            if(dw['macd'].values[-1] == dw['macd'][-50:].min() and dw['macd'].values[-1] < 0):
-                print('买入')
-                return '买入'
-            else:
-                print('不买卖')
-                return '不买卖'
+                    if(dw['close'].values[-1] > value_618 and dw['close'].values[-1] < value_192  and dw['close'].values[-1] > dw['open'].values[-1] and (sum(buyVolumes)/len(buyVolumes)) / (sum(sellVolumes)/len(sellVolumes)) > 1.01):
+                        print('买入')
+                        result = '买入'
+                    if(dw['macd'].values[-1] == dw['macd'][-40:].min() and dw['macd'].values[-1] < 0):
+                        print('买入')
+                        result = '买入'
+                    else:
+                        print('不买卖')
+                        result = '不买卖'
+                break
+            except:
+                time.sleep(5)
+                continue
+        return result
 
 
     def getfulldata(df,symbol):
@@ -342,17 +350,19 @@ class Datainfo:
         def run():
             sch = Datainfo.windowsshow()
 
-            #声明2线程保存数据
+            #声明4进程保存数据
             p1 = multiprocessing.Process(target = sch.showwindows)
             p2 = multiprocessing.Process(target = sch.okex5M_buy)
             p3 = multiprocessing.Process(target = sch.okex15M_buy)
+            p4 = multiprocessing.Process(target = sch.okex3M_buy)
 
-
-            #2个进程开始运行
+            #4个进程开始运行
+            p4.start()
             p3.start()
             p2.start()
             p1.start()
 
+            p4.join()
             p3.join()
             p2.join()
             p1.join()
