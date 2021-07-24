@@ -197,15 +197,15 @@ class Datainfo:
                     buyVolumes = df['buyVolumes'].tail(20).values
                     sellVolumes = df['sellVolumes'].tail(20).values
 
-                    if(dw['close'].values[-1] > value_618 and dw['close'].values[-1] < value_192  and dw['macd'].values[-1] > dw['macd'].values[-2] and (sum(buyVolumes)/len(buyVolumes)) / (sum(sellVolumes)/len(sellVolumes)) > 1.01):
+                    if(dw['close'].values[-1] > value_618 and dw['close'].values[-1] < value_192  and dw['macd'].values[-1] > dw['macd'].values[-2]+5 and (sum(buyVolumes)/len(buyVolumes)) / (sum(sellVolumes)/len(sellVolumes)) > 1.01):
                         result = '买入'
-                        ones = '满足条件2'
+                        ones = '黄金分割公式'
                     if(dw['macd'].values[-2] == dw['macd'][-30:].min() and dw['macd'].values[-2] < 0 and dw['macd'].values[-2] < dw['macd'].values[-1]):
                         result = '买入'
-                        ones = '满足条件3'
-                    if(dw['macd'].values[-1]>dw['macd'].values[-2]+100 and dw['macd'].values[-2] > dw['macd'].values[-3] and dw['close'].values[-1] > dw['open'].values[-1] and (sum(buyVolumes)/len(buyVolumes)) / (sum(sellVolumes)/len(sellVolumes)) > 1.01 and dw['close'].values[-1] >value_192):
+                        ones = '最小值买入公式'
+                    if(dw['macd'].values[-1]>dw['macd'].values[-2]+8 and dw['macd'].values[-2] > dw['macd'].values[-3] and dw['close'].values[-1] > dw['open'].values[-1] and (sum(buyVolumes)/len(buyVolumes)) / (sum(sellVolumes)/len(sellVolumes)) > 1.01 and dw['close'].values[-1] >value_192):
                         result = '买入'
-                        ones = '满足条件4'
+                        ones = '神圣计划公式'
 
                     #哥要上涨公式
                     var1 = ((dw['close'].values+dw['open'].values+dw['high'].values+dw['low'].values)/4)[-1:]
@@ -216,9 +216,14 @@ class Datainfo:
                     var5 = 0
                     if(dw['low'].values[-1] < var4):
                         var5 = ta.EMA(np.array(var3),3)
-                        if(var5[-1] < var5[-2]):
+                        if(var5[-1] < var5[-2] and dw['close'].values[-1] > dw['open'].values[-1] and dw['macd'].values[-1] > dw['macd'].values[-2] and (sum(buyVolumes)/len(buyVolumes)) / (sum(sellVolumes)/len(sellVolumes)) > 1.01):
                             result = '买入'
                             ones = '哥要上涨公式'
+
+                    #抄底公式
+                    if( dw['MACD_macd'].values[-2] < dw['MACD_macdsignal'].values[-2] and dw['MACD_macd'].values[-1] > dw['MACD_macdsignal'].values[-1] and  dw['MACD_macdsignal'].values[-1] <= -0.07 and dw['macd'].values[-1] > dw['macd'].values[-2]+5):
+                        result = '买入'
+                        ones = '底部公式'
                 break
             except:
                 time.sleep(5)
