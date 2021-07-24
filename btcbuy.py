@@ -184,12 +184,12 @@ class Datainfo:
                     Y2 = dw['close'].values[-2]*float(dw['MATRIX'].values[-2])*float(dw['TRIX'].values[-2])
 
 
-                    if(not(X1 >5 and X2 < -3) and X1 >0 and X2 <0 and not(Y1 >0 and Y2 < 0) and dw['macd'].values[-1] > dw['macd'].values[-2] ):
+                    if( X1 >0 and X2 <0 and not(Y1 >0 and Y2 < 0)  and dw['macd'].values[-1] > dw['macd'].values[-2]):
                         result = '买入'
                         ones = '满足条件1'
                     
-                    maxvalue = dw.iloc[-50:][(dw['macd'] == dw['macd'][-50:].max())]['close']
-                    minvalue = dw.iloc[-50:][(dw['macd'] == dw['macd'][-50:].min())]['close']
+                    maxvalue = dw.iloc[-30:][(dw['macd'] == dw['macd'][-30:].max())]['close']
+                    minvalue = dw.iloc[-30:][(dw['macd'] == dw['macd'][-30:].min())]['close']
                     value = maxvalue.values - minvalue.values
                     value_618 = maxvalue.values - value * 0.618
                     value_192 = maxvalue.values - value * 0.192
@@ -200,12 +200,25 @@ class Datainfo:
                     if(dw['close'].values[-1] > value_618 and dw['close'].values[-1] < value_192  and dw['macd'].values[-1] > dw['macd'].values[-2] and (sum(buyVolumes)/len(buyVolumes)) / (sum(sellVolumes)/len(sellVolumes)) > 1.01):
                         result = '买入'
                         ones = '满足条件2'
-                    if(dw['macd'].values[-2] == dw['macd'][-35:].min() and dw['macd'].values[-2] < 0 and dw['macd'].values[-2] < dw['macd'].values[-1]):
+                    if(dw['macd'].values[-2] == dw['macd'][-30:].min() and dw['macd'].values[-2] < 0 and dw['macd'].values[-2] < dw['macd'].values[-1]):
                         result = '买入'
                         ones = '满足条件3'
                     if(dw['macd'].values[-1]>dw['macd'].values[-2]+100 and dw['macd'].values[-2] > dw['macd'].values[-3] and dw['close'].values[-1] > dw['open'].values[-1] and (sum(buyVolumes)/len(buyVolumes)) / (sum(sellVolumes)/len(sellVolumes)) > 1.01 and dw['close'].values[-1] >value_192):
                         result = '买入'
                         ones = '满足条件4'
+
+                    #哥要上涨公式
+                    var1 = ((dw['close'].values+dw['open'].values+dw['high'].values+dw['low'].values)/4)[-1:]
+                    var2 = ta.SMA(abs(np.array(dw['low'].values[-800:]-var1[-800:])),13)
+                    var3 = ta.EMA(var2,10)
+                    var3 = var3[~np.isnan(var3)]
+                    var4 = dw['low'][-33:].min() 
+                    var5 = 0
+                    if(dw['low'].values[-1] < var4):
+                        var5 = ta.EMA(np.array(var3),3)
+                        if(var5[-1] < var5[-2]):
+                            result = '买入'
+                            ones = '哥要上涨公式'
                 break
             except:
                 time.sleep(5)
@@ -301,7 +314,7 @@ class Datainfo:
         # 批量下单  Place Multiple Orders
         # 批量下单  Place Multiple Orders
         result = tradeAPI.place_multiple_orders([
-             {'instId': symbol.upper()+'-USD-SWAP', 'tdMode': 'cross', 'side': 'buy', 'ordType': 'market', 'sz': '10',
+             {'instId': symbol.upper()+'-USD-SWAP', 'tdMode': 'cross', 'side': 'buy', 'ordType': 'market', 'sz': '3',
               'posSide': 'long',
               'clOrdId': 'a12344', 'tag': 'test1210'},
     
@@ -321,11 +334,11 @@ class Datainfo:
 
         # 策略委托下单  Place Algo Order
         result = tradeAPI.place_algo_order(symbol.upper()+'-USD-SWAP', 'cross', 'sell', ordType='conditional',
-                                            sz='10',posSide='long', tpTriggerPx=str(float(lastprice)+100), tpOrdPx=str(float(lastprice)+100))
+                                            sz='3',posSide='long', tpTriggerPx=str(float(lastprice)+100), tpOrdPx=str(float(lastprice)+100))
         #Datainfo.saveinfo(str(datetime.now())+'设置止盈完毕。。。'+str(float(lastprice)+50))
 
 
-        sendtext = '买入'+symbol.upper()+'-USD-SWAP -->> 10笔，价格是'+str(lastprice)+'，设置止盈完毕。。。'+str(float(lastprice)+100)
+        sendtext = '买入'+symbol.upper()+'-USD-SWAP -->> 3笔，价格是'+str(lastprice)+'，设置止盈完毕。。。'+str(float(lastprice)+100)
         Datainfo.save_finalinfo('买入价格是--》》'+str(lastprice)+'，设置止盈完毕。。。'+str(float(lastprice)+100))
         SendDingding.sender(sendtext)
 
