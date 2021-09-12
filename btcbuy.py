@@ -34,6 +34,9 @@ import okex.Trade_api as Trade
 import okex.subAccount_api as SubAccount
 import okex.status_api as Status
 import math
+from sklearn import svm
+from sklearn.linear_model import LogisticRegression
+from sklearn.model_selection import train_test_split
 import warnings
 warnings.filterwarnings('ignore')
 
@@ -54,6 +57,22 @@ class Datainfo:
 
         result = '不买卖'
         ones = ''
+
+        api_key,secret_key,passphrase,flag = Datainfo.get_userinfo()
+
+        #判断订单是否大于5单，大于则不买入
+        #trade api
+        tradeAPI = Trade.TradeAPI(api_key, secret_key, passphrase, False, flag)
+        list_string_buy = ['buy']
+        list_string_sell = ['sell']
+        print(tradeAPI.get_fills())
+        list_text = list(pd.DataFrame(eval(str(tradeAPI.get_fills()))['data'])['side'].head(300).values)
+        all_words_buy = list(filter(lambda text: all([word in text for word in list_string_buy]), list_text ))
+        all_words_sell = list(filter(lambda text: all([word in text for word in list_string_sell]), list_text ))
+ 
+        if(len(all_words_buy)-len(all_words_sell)>=20):
+            Datainfo.saveinfo(symbol+'买单大于20单返回。。。>>>')
+            return result
 
         for i in range(10000):
 
@@ -171,12 +190,14 @@ class Datainfo:
 
                 Datainfo.getfulldata(dw,symbol)
 
+                learning = Datainfo.getnextdata(dw,symbol)
+
 
                 #===判断是否买入或者卖出
         
                 #df = pd.read_csv(f'./datas/okex/'+symbol+'/old_'+symbol+'.csv')
 
-                if(dw['vol'].values[-1] and dw['p'].values[-1] and dw['vol'].values[-2] and dw['p'].values[-2]):
+                if(dw['vol'].values[-1] and dw['p'].values[-1] and dw['vol'].values[-2] and dw['p'].values[-2] and learning):
                     X1 = dw['close'].values[-1]/dw['vol'].values[-1]*dw['p'].values[-1]/dw['MA'].values[-1]*dw['obv'].values[-1]/dw['maobv'].values[-1]*dw['TRIX'].values[-1]*dw['MATRIX'].values[-1]*dw['close5'].values[-1]/dw['close135'].values[-1]*dw['macd'].values[-1]
                     X2 = dw['close'].values[-2]/dw['vol'].values[-2]*dw['p'].values[-2]/dw['MA'].values[-2]*dw['obv'].values[-2]/dw['maobv'].values[-2]*dw['TRIX'].values[-2]*dw['MATRIX'].values[-2]*dw['close5'].values[-2]/dw['close135'].values[-2]*dw['macd'].values[-2]
 
@@ -184,12 +205,12 @@ class Datainfo:
                     Y2 = dw['close'].values[-2]*float(dw['MATRIX'].values[-2])*float(dw['TRIX'].values[-2])
 
 
-                    if( X1 >0 and X2 <0 and not(Y1 >0 and Y2 < 0)  and dw['macd'].values[-1] > dw['macd'].values[-2]):
+                    if(not(X1 >5 and X2 < -3) and X1 >0 and X2 <0 and not(Y1 >0 and Y2 < 0) and dw['macd'].values[-1] > dw['macd'].values[-2] ):
                         result = '买入'
                         ones = '满足条件1'
                     
-                    maxvalue = dw.iloc[-30:][(dw['macd'] == dw['macd'][-30:].max())]['close']
-                    minvalue = dw.iloc[-30:][(dw['macd'] == dw['macd'][-30:].min())]['close']
+                    maxvalue = dw.iloc[-50:][(dw['macd'] == dw['macd'][-50:].max())]['close']
+                    minvalue = dw.iloc[-50:][(dw['macd'] == dw['macd'][-50:].min())]['close']
                     value = maxvalue.values - minvalue.values
                     value_618 = maxvalue.values - value * 0.618
                     value_192 = maxvalue.values - value * 0.192
@@ -197,33 +218,12 @@ class Datainfo:
                     buyVolumes = df['buyVolumes'].tail(20).values
                     sellVolumes = df['sellVolumes'].tail(20).values
 
-                    if(dw['close'].values[-1] > value_618 and dw['close'].values[-1] < value_192  and dw['macd'].values[-1] > dw['macd'].values[-2]+5 and (sum(buyVolumes)/len(buyVolumes)) / (sum(sellVolumes)/len(sellVolumes)) > 1.01):
+                    if(dw['close'].values[-1] > value_618 and dw['close'].values[-1] < value_192  and dw['macd'].values[-1] > dw['macd'].values[-2] and (sum(buyVolumes)/len(buyVolumes)) / (sum(sellVolumes)/len(sellVolumes)) > 1.01):
                         result = '买入'
-                        ones = '黄金分割公式'
-                    if(dw['macd'].values[-2] == dw['macd'][-30:].min() and dw['macd'].values[-2] < 0 and dw['macd'].values[-2] < dw['macd'].values[-1]):
+                        ones = '满足条件2'
+                    if(dw['macd'].values[-2] == dw['macd'][-40:].min() and dw['macd'].values[-2] < 0 and dw['macd'].values[-2] < dw['macd'].values[-1]):
                         result = '买入'
-                        ones = '最小值买入公式'
-                    if(dw['macd'].values[-1]>dw['macd'].values[-2]+8 and dw['macd'].values[-2] > dw['macd'].values[-3] and dw['close'].values[-1] > dw['open'].values[-1]):
-                        result = '买入'
-                        ones = '神圣计划公式'
-
-                    #哥要上涨公式
-                    var1 = ((dw['close'].values+dw['open'].values+dw['high'].values+dw['low'].values)/4)[-1:]
-                    var2 = ta.SMA(abs(np.array(dw['low'].values[-800:]-var1[-800:])),13)
-                    var3 = ta.EMA(var2,10)
-                    var3 = var3[~np.isnan(var3)]
-                    var4 = dw['low'][-33:].min() 
-                    var5 = 0
-                    if(dw['low'].values[-1] < var4):
-                        var5 = ta.EMA(np.array(var3),3)
-                        if(var5[-1] < var5[-2] and dw['close'].values[-1] > dw['open'].values[-1] and dw['macd'].values[-1] > dw['macd'].values[-2] and (sum(buyVolumes)/len(buyVolumes)) / (sum(sellVolumes)/len(sellVolumes)) > 1.01):
-                            result = '买入'
-                            ones = '哥要上涨公式'
-
-                    #抄底公式
-                    if( dw['MACD_macd'].values[-2] < dw['MACD_macdsignal'].values[-2] and dw['MACD_macd'].values[-1] > dw['MACD_macdsignal'].values[-1] and  dw['MACD_macdsignal'].values[-1] <= -0.07 and dw['macd'].values[-1] > dw['macd'].values[-2]+5):
-                        result = '买入'
-                        ones = '底部公式'
+                        ones = '满足条件3'
                 break
             except:
                 time.sleep(5)
@@ -319,7 +319,7 @@ class Datainfo:
         # 批量下单  Place Multiple Orders
         # 批量下单  Place Multiple Orders
         result = tradeAPI.place_multiple_orders([
-             {'instId': symbol.upper()+'-USD-SWAP', 'tdMode': 'cross', 'side': 'buy', 'ordType': 'market', 'sz': '1',
+             {'instId': symbol.upper()+'-USD-SWAP', 'tdMode': 'cross', 'side': 'buy', 'ordType': 'market', 'sz': '3',
               'posSide': 'long',
               'clOrdId': 'a12344', 'tag': 'test1210'},
     
@@ -339,12 +339,12 @@ class Datainfo:
 
         # 策略委托下单  Place Algo Order
         result = tradeAPI.place_algo_order(symbol.upper()+'-USD-SWAP', 'cross', 'sell', ordType='conditional',
-                                            sz='1',posSide='long', tpTriggerPx=str(float(lastprice)+100), tpOrdPx=str(float(lastprice)+100))
+                                            sz='3',posSide='long', tpTriggerPx=str(float(lastprice)+200), tpOrdPx=str(float(lastprice)+200))
         #Datainfo.saveinfo(str(datetime.now())+'设置止盈完毕。。。'+str(float(lastprice)+50))
 
 
-        sendtext = '买入'+symbol.upper()+'-USD-SWAP -->> 1笔，价格是'+str(lastprice)+'，设置止盈完毕。。。'+str(float(lastprice)+100)
-        Datainfo.save_finalinfo('买入价格是--》》'+str(lastprice)+'，设置止盈完毕。。。'+str(float(lastprice)+100))
+        sendtext = '买入'+symbol.upper()+'-USD-SWAP -->> 3笔，价格是'+str(lastprice)+'，设置止盈完毕。。。'+str(float(lastprice)+200)
+        Datainfo.save_finalinfo('买入价格是--》》'+str(lastprice)+'，设置止盈完毕。。。'+str(float(lastprice)+200))
         SendDingding.sender(sendtext)
 
 
@@ -361,7 +361,93 @@ class Datainfo:
         
         return eval(json.dumps(result['data'][0]))['last']
    
+    #数据清洗
+    def clean_data_df(df):
+        # 计算当前、未来1-day涨跌幅
+        df.loc[:,'1d_close_future_pct'] = df['close'].shift(-1).pct_change(1)
+        df.loc[:,'now_1d_direction'] = df['close'].pct_change(1)
+        df.dropna(inplace=True)
+        # ====1代表上涨，0代表下跌
+        df.loc[df['1d_close_future_pct'] > 0, 'future_1d_direction'] = 1
+        df.loc[df['1d_close_future_pct'] <= 0, 'future_1d_direction'] = 0
+        df = df[['now_1d_direction', 'future_1d_direction']]
+        return df
 
+    #增加数据标签
+    def split_train_and_test(df):
+        # 创建特征 X 和标签 y
+        y = df['future_1d_direction'].values
+        X = df.drop('future_1d_direction', axis=1).values
+        # 划分训练集和测试集
+        X_train, X_test, y_train, y_test =  train_test_split(X, y, test_size=0.8, random_state=42)
+        return X_train, X_test, y_train, y_test
+
+    #svm_svc模型
+    def svm_svc(X_train, X_test, y_train, y_test):
+        clf = svm.SVC(gamma='auto')
+        clf.fit(X_train, y_train)
+        new_prediction = clf.predict(X_test)
+    #   print("Prediction: {}".format(new_prediction))
+        return (clf.score(X_test, y_test))
+
+    #主函数 SVM
+    def main(df):
+        #数据清洗
+        df = Datainfo.clean_data_df(df)
+        X_train, X_test, y_train, y_test =  Datainfo.split_train_and_test(df)
+        svm_score = Datainfo.svm_svc(X_train, X_test, y_train, y_test)
+
+    #获取下个预期数值的方法
+    def getnextdata(df,symbol):
+
+        
+        f_info = "\n开始获取是否"+symbol+"买入信号 SVM人工智能运算"
+        print(f_info)
+        #运行主函数
+        Datainfo.main(df)
+        #获取close值
+        for i in range(1, 21, 1):
+            df['close - ' + str(i) + 'd'] = df['close'].shift(i)
+
+        df_20d = df[[x for x in df.columns if 'close' in x]].iloc[20:]
+        df_20d = df_20d.iloc[:,::-1]   # 转换特征的顺序；
+
+        #训练模型
+        clf = svm.SVR(kernel='linear')
+        features_train = df_20d[:800]
+        labels_train = df_20d['close'].shift(-1)[:800]     # 回归问题的标签就是预测的就是股价，下一天的收盘价就是前一天的标签；
+        features_test = df_20d[800:]
+        labels_test = df_20d['close'].shift(-1)[800:]
+        clf.fit(features_train, labels_train)     # 模型的训练过程；
+
+        predict = clf.predict(features_test)      # 给你测试集的特征，返回的是测试集的标签，回归问题的标签就是股价；
+
+        dft = pd.DataFrame(labels_test)
+        dft['predict'] = predict     # 把前面预测的测试集的股价给添加到DataFrame中；
+        dft = dft.rename(columns = {'close': 'Next Close', 'predict':'Predict Next Close'})
+
+        current_close = df_20d[['close']].iloc[800:]
+        next_open = df[['open']].iloc[820:].shift(-1)
+
+        #获取df1 df2的值
+        df1 = pd.merge(dft, current_close, left_index=True, right_index=True)
+
+        df2 = pd.merge(df1, next_open, left_index=True, right_index=True)
+        df2.columns = ['Next Close', 'Predicted Next Close', 'Current Close', 'Next Open']
+        #画图
+        #df2['Signal'] = np.where(df2['Predicted Next Close'] > df2['Next Open'] ,1,0)
+
+        #df2['PL'] =  np.where(df2['Signal'] == 1,(df2['Next Close'] - df2['Next Open'])/df2['Next Open'],0)
+
+        #df2['Strategy'] = (df2['PL'].shift(1)+1).cumprod()
+        #df2['return'] = (df2['Next Close'].pct_change()+1).cumprod()
+
+        #df2[['Strategy','return']].dropna().plot(figsize=(10, 6))
+
+        #获取预期下个整点的值
+        print(df2['Predicted Next Close'].tail(1).values[0] > df2['Current Close'].tail(1).values[0])
+        print(df2.tail(5))
+        return df2['Predicted Next Close'].tail(1).values[0] > df2['Current Close'].tail(1).values[0]
   
     class mywindows_multiprocessing ():
 
@@ -372,11 +458,11 @@ class Datainfo:
 
             #声明6进程保存数据
             p1 = multiprocessing.Process(target = sch.showwindows)
-            p4 = multiprocessing.Process(target = sch.okex3M_buy)
-            p2 = multiprocessing.Process(target = sch.okex5M_buy)
-            p3 = multiprocessing.Process(target = sch.okex15M_buy)
-            p5 = multiprocessing.Process(target = sch.okex60M_buy)
-            p6 = multiprocessing.Process(target = sch.okex240M_buy)
+            p2 = multiprocessing.Process(target = sch.okex15M_buy)
+            p3 = multiprocessing.Process(target = sch.okex60M_buy)
+            p4 = multiprocessing.Process(target = sch.okex240M_buy)
+            p5 = multiprocessing.Process(target = sch.okex3M_buy)
+            p6 = multiprocessing.Process(target = sch.okex5M_buy)
 
             #6个进程开始运行
             p6.start()
