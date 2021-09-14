@@ -212,6 +212,33 @@ class Datainfo:
                     buyVolumes = df['buyVolumes'].tail(20).values
                     sellVolumes = df['sellVolumes'].tail(20).values
 
+                    TODAYVOLATILITY = np.std(dw['close'].values,ddof =30)#当日市场波动
+                    YESTERDAYVOLATILITY = np.std(dw['close'].values[1:],ddof =30)#昨日市场波动
+                    LOOKBACKDAYS=0
+                    DELTAVOLATILITY=(TODAYVOLATILITY-YESTERDAYVOLATILITY)/TODAYVOLATILITY #市场波动的变动率
+                    
+                    #计算自适应参数
+                    if(abs(dw['close'].values[-1]-dw['open'].values[-1])<=30):
+                           LOOKBACKDAYS = 20
+                    else:
+                           LOOKBACKDAYS = 1+DELTAVOLATILITY
+                    LOOKBACKDAYS=round(LOOKBACKDAYS,0)
+                    LOOKBACKDAYS=min(LOOKBACKDAYS,40) 
+                    LOOKBACKDAYS=max(LOOKBACKDAYS,20)
+
+                    MIDLINE=ta.MA(dw['close'].values,timeperiod = LOOKBACKDAYS,matype=0)
+                    BAND=np.std(dw['close'].values,ddof =LOOKBACKDAYS) #自适应布林通道中轨
+                    UPBAND=MIDLINE+2*BAND#自适应布林通道上轨
+                    DNBAND=MIDLINE-2*BAND#自适应布林通道下轨
+                    BUYPOINT1=(dw['high'].values)#自适应唐奇安通道上轨
+                    BUYPOINT2=(dw['high'].values[:-1])
+                    ta.EMA(np.array(BUYPOINT1), timeperiod=60)
+                    VAR1=ta.EMA(ta.EMA(np.array(BUYPOINT1), timeperiod=60), timeperiod=60)[-LOOKBACKDAYS:]
+                    VAR2=ta.EMA(ta.EMA(np.array(BUYPOINT2), timeperiod=60), timeperiod=60)[-(LOOKBACKDAYS+1):-1]
+
+                    VAR3=ta.EMA(ta.EMA(np.array(BUYPOINT1), timeperiod=60), timeperiod=60)[-(LOOKBACKDAYS+1):-1]
+                    VAR4=ta.EMA(ta.EMA(np.array(BUYPOINT2), timeperiod=60), timeperiod=60)[-(LOOKBACKDAYS+2):-2]
+
                     if(not(X1 >5 and X2 < -3) and X1 >0 and X2 <0 and not(Y1 >0 and Y2 < 0) and dw['macd'].values[-1] > dw['macd'].values[-2] ):
                         result = '买入'
                         ones = '满足条件1'
@@ -221,6 +248,9 @@ class Datainfo:
                     elif(dw['macd'].values[-2] == dw['macd'][-40:].min() and dw['macd'].values[-2] < 0 and dw['macd'].values[-2] < dw['macd'].values[-1]):
                         result = '买入'
                         ones = '满足条件3'
+                    elif((VAR1-VAR2).max()/VAR2.max()>0 and (VAR3-VAR4).max()/VAR4.max()<=0):
+                        result = '买入'
+                        ones = '满足条件4'
                 break
             except:
                 time.sleep(5)
@@ -316,7 +346,7 @@ class Datainfo:
         # 批量下单  Place Multiple Orders
         # 批量下单  Place Multiple Orders
         result = tradeAPI.place_multiple_orders([
-             {'instId': symbol.upper()+'-USD-SWAP', 'tdMode': 'cross', 'side': 'buy', 'ordType': 'market', 'sz': '5',
+             {'instId': symbol.upper()+'-USD-SWAP', 'tdMode': 'cross', 'side': 'buy', 'ordType': 'market', 'sz': '10',
               'posSide': 'long',
               'clOrdId': 'a12344', 'tag': 'test1210'},
     
@@ -336,11 +366,11 @@ class Datainfo:
 
         # 策略委托下单  Place Algo Order
         result = tradeAPI.place_algo_order(symbol.upper()+'-USD-SWAP', 'cross', 'sell', ordType='conditional',
-                                            sz='5',posSide='long', tpTriggerPx=str(float(lastprice)+200), tpOrdPx=str(float(lastprice)+200))
+                                            sz='10',posSide='long', tpTriggerPx=str(float(lastprice)+200), tpOrdPx=str(float(lastprice)+200))
         #Datainfo.saveinfo(str(datetime.now())+'设置止盈完毕。。。'+str(float(lastprice)+50))
 
 
-        sendtext = '买入'+symbol.upper()+'-USD-SWAP -->> 5笔，价格是'+str(lastprice)+'，设置止盈完毕。。。'+str(float(lastprice)+200)
+        sendtext = '买入'+symbol.upper()+'-USD-SWAP -->> 10笔，价格是'+str(lastprice)+'，设置止盈完毕。。。'+str(float(lastprice)+200)
         Datainfo.save_finalinfo('买入价格是--》》'+str(lastprice)+'，设置止盈完毕。。。'+str(float(lastprice)+200))
         SendDingding.sender(sendtext)
 
