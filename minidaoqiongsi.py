@@ -93,7 +93,7 @@ class NQ_Datainfo():
         df['close35'] = ta.EMA(np.array(df['close'].values), timeperiod=35)
         df['close135'] = ta.EMA(np.array(df['close'].values), timeperiod=135)
 
-        df["MACD_macd"],df["MACD_macdsignal"],df["MACD_macdhist"] = ta.MACD(df['close'].values, fastperiod=12, slowperiod=26, signalperiod=60)
+        df["MACD_macd"],df["MACD_macdsignal"],df["MACD_macdhist"] = ta.MACD(df['close'].values, fastperiod=12, slowperiod=26, signalperiod=3)
         df['macd'] = 2*(df["MACD_macd"]-df["MACD_macdsignal"])
 
         df["MA"] = ta.MA(df['close'].values, timeperiod=30, matype=0)
@@ -117,33 +117,11 @@ class NQ_Datainfo():
         dw=pd.DataFrame()
         dw=df
         symbol = SendDingding.get_symbol_name(symbol)
-        X1 = dw['close'].values[-1]/dw['volume'].values[-1]/dw['MA'].values[-1]*dw['obv'].values[-1]/dw['maobv'].values[-1]*dw['TRIX'].values[-1]*dw['MATRIX'].values[-1]*dw['close5'].values[-1]/dw['close135'].values[-1]*dw['macd'].values[-1]
-        X2 = dw['close'].values[-2]/dw['volume'].values[-2]/dw['MA'].values[-2]*dw['obv'].values[-2]/dw['maobv'].values[-2]*dw['TRIX'].values[-2]*dw['MATRIX'].values[-2]*dw['close5'].values[-2]/dw['close135'].values[-2]*dw['macd'].values[-2]
 
-        Y1 = dw['close'].values[-1]*float(dw['MATRIX'].values[-1])*float(dw['TRIX'].values[-1])
-        Y2 = dw['close'].values[-2]*float(dw['MATRIX'].values[-2])*float(dw['TRIX'].values[-2])
-
-        maxvalue = dw.iloc[-50:][(dw['macd'] == dw['macd'][-50:].max())]['close']
-        minvalue = dw.iloc[-50:][(dw['macd'] == dw['macd'][-50:].min())]['close']
-        value = maxvalue.values - minvalue.values
-        value_618 = maxvalue.values - value * 0.618
-        value_192 = maxvalue.values - value * 0.192
-        
-        if(not(X1 >5 and X2 < -3) and X1 >0 and X2 <0 and not(Y1 >0 and Y2 < 0) and dw['macd'].values[-1] > dw['macd'].values[-2] ):
-            result = '买入'
-            ones = '满足条件1'
-            print("\n买入"+str(minute)+'分钟，'+symbol+"，符合条件，买入时间是："+str(df['date'][-1:].values[0])+"，买入值是："+str(df['close'][-1:].values),symbol)
-            SendDingding.buy_sender("\n买入"+str(minute)+'分钟，'+symbol+"，符合条件，买入时间是："+str(df['date'][-1:].values[0])+"，买入值是："+str(df['close'][-1:].values),symbol)
-           
-        elif(dw['close'].values[-1] > value_618 and dw['close'].values[-1] < value_192  and dw['macd'].values[-1] > dw['macd'].values[-2] and dw['volume'].values[-1] > dw['volume'].values[-2]*1.01):
-            result = '买入'
-            ones = '满足条件2'
-            print("\n买入"+str(minute)+'分钟，'+symbol+"，符合条件，买入时间是："+str(df['date'][-1:].values[0])+"，买入值是："+str(df['close'][-1:].values),symbol)
-            SendDingding.buy_sender("\n买入"+str(minute)+'分钟，'+symbol+"，符合条件，买入时间是："+str(df['date'][-1:].values[0])+"，买入值是："+str(df['close'][-1:].values),symbol)
-          
-        elif(dw['macd'].values[-2] == dw['macd'][-40:].min() and dw['macd'].values[-2] < 0 and dw['macd'].values[-2] < dw['macd'].values[-1]):
-            result = '买入'
-            ones = '满足条件3'
+        VAR1 = ta.EMA(np.array(ta.EMA(np.array(df['macd'].values), timeperiod=9)), timeperiod=9)
+        kongpan = (VAR1[1:]-VAR1[:-1])/VAR1[:-1]*1000
+        ref_kongpan = (VAR1[2:]-VAR1[:-2])/VAR1[:-2]*1000
+        if(kongpan[-1:]>ref_kongpan[-1:] and kongpan[-1:]>20 and (df['macd'].values[-1]>df['macd'].values[-2] or df['macd'].values[-2]>df['macd'].values[-3])):
             print("\n买入"+str(minute)+'分钟，'+symbol+"，符合条件，买入时间是："+str(df['date'][-1:].values[0])+"，买入值是："+str(df['close'][-1:].values),symbol)
             SendDingding.buy_sender("\n买入"+str(minute)+'分钟，'+symbol+"，符合条件，买入时间是："+str(df['date'][-1:].values[0])+"，买入值是："+str(df['close'][-1:].values),symbol)
         else:
@@ -177,6 +155,7 @@ class NQ_Datainfo():
             return False
 
     #NQ,CL,YM,HSI,ES,NK,CHA50CFD 5分钟
+
 
 
     def final_NQ_5M(self):
@@ -244,6 +223,7 @@ class NQ_Datainfo():
 
 
 class RuntimeScheduler:
+
 
     #NQ,CL,YM,HSI,ES,NK,CHA50CFD
 
@@ -509,18 +489,14 @@ if __name__ == '__main__':
 
     #定义进程
 
-    p1 =multiprocessing.Process(target = dingzhi.get_final_NQ_5M_job)
-    p2 =multiprocessing.Process(target = dingzhi.get_final_NQ_15M_job)
-    p3 =multiprocessing.Process(target = dingzhi.get_final_YM_5M_job)
-    p4 =multiprocessing.Process(target = dingzhi.get_final_YM_15M_job)
-    p5 =multiprocessing.Process(target = dingzhi.get_final_HSI_5M_job)
-    p6 =multiprocessing.Process(target = dingzhi.get_final_HSI_15M_job)
-    p7 =multiprocessing.Process(target = dingzhi.get_final_ES_5M_job)
-    p8 =multiprocessing.Process(target = dingzhi.get_final_ES_15M_job)
-    p9 =multiprocessing.Process(target = dingzhi.get_final_NK_5M_job)
-    p10 =multiprocessing.Process(target = dingzhi.get_final_NK_15M_job)
-    p11 =multiprocessing.Process(target = dingzhi.get_final_CHA50CFD_5M_job)
-    p12 =multiprocessing.Process(target = dingzhi.get_final_CHA50CFD_15M_job)
+    p1 =multiprocessing.Process(target = dingzhi.get_final_YM_5M_job)
+    p2 =multiprocessing.Process(target = dingzhi.get_final_YM_15M_job)
+    p3 =multiprocessing.Process(target = dingzhi.get_final_NQ_5M_job)
+    p4 =multiprocessing.Process(target = dingzhi.get_final_NQ_15M_job)
+    p1 =multiprocessing.Process(target = dingzhi.get_final_ES_5M_job)
+    p2 =multiprocessing.Process(target = dingzhi.get_final_ES_15M_job)
+    p3 =multiprocessing.Process(target = dingzhi.get_final_NK_5M_job)
+    p4 =multiprocessing.Process(target = dingzhi.get_final_NK_15M_job)
 
     #start
 
@@ -532,11 +508,6 @@ if __name__ == '__main__':
     p6.start()
     p7.start()
     p8.start()
-    p9.start()
-    p10.start()
-    p11.start()
-    p12.start()
-
 
     #join
 
@@ -548,9 +519,4 @@ if __name__ == '__main__':
     p6.join()
     p7.join()
     p8.join()
-    p9.join()
-    p10.join()
-    p11.join()
-    p12.join()
-
 
