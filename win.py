@@ -171,7 +171,7 @@ class Datainfo:
             if('买入' == result):
                     
 
-                sendtext = '买入'+symbol+' -->> ,价格是'+str(lastprice))
+                sendtext = '买入'+symbol+' -->> ,价格是'+str(dw['close'].values[-1])
                 Datainfo.save_finalinfo(sendtext)
                 SendDingding.sender(sendtext)
 
