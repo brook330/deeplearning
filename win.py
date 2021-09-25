@@ -124,9 +124,8 @@ class Datainfo:
                     dw['close'] = list(map(float, dw['close'].values))
         
                     dw.to_csv(f'./datas/okex/'+symbol+'/close.csv',index = False)
-                    time.sleep(int(minute))
+       
                     dw = pd.read_csv(f'./datas/okex/'+symbol+'/close.csv')
-                    time.sleep(int(minute))
 
                     Datainfo.getfulldata(dw,symbol)
 
@@ -162,7 +161,7 @@ class Datainfo:
 
                         break
                 except:
-                    time.sleep(5)
+                    time.sleep(0.5)
                     continue
 
 
@@ -278,8 +277,8 @@ class Datainfo:
         #Datainfo.saveinfo(str(datetime.now())+'设置止盈完毕。。。'+str(float(lastprice)+50))
 
 
-        sendtext = '买入'+symbol+' -->> 10笔，价格是'+str(lastprice)+'，设置止盈完毕。。。'+str(float(lastprice)+100)
-        Datainfo.save_finalinfo('买入价格是--》》'+str(lastprice)+'，设置止盈完毕。。。'+str(float(lastprice)*1.01))
+        sendtext = '买入'+symbol+' -->> 1笔，价格是'+str(lastprice)+'，设置止盈完毕。。。'+str(float(lastprice)*1.01)
+        Datainfo.save_finalinfo(sendtext)
         SendDingding.sender(sendtext)
 
 
@@ -349,10 +348,10 @@ class Datainfo:
 
         #训练模型
         clf = svm.SVR(kernel='linear')
-        features_train = df_20d[:80]
-        labels_train = df_20d['close'].shift(-1)[:80]     # 回归问题的标签就是预测的就是股价，下一天的收盘价就是前一天的标签；
-        features_test = df_20d[80:]
-        labels_test = df_20d['close'].shift(-1)[80:]
+        features_train = df_20d[:580]
+        labels_train = df_20d['close'].shift(-1)[:580]     # 回归问题的标签就是预测的就是股价，下一天的收盘价就是前一天的标签；
+        features_test = df_20d[580:]
+        labels_test = df_20d['close'].shift(-1)[580:]
         clf.fit(features_train, labels_train)     # 模型的训练过程；
 
         predict = clf.predict(features_test)      # 给你测试集的特征，返回的是测试集的标签，回归问题的标签就是股价；
@@ -393,16 +392,16 @@ class Datainfo:
 
             #声明6进程保存数据
             p1 = multiprocessing.Process(target = sch.showwindows)
-            p2 = multiprocessing.Process(target = sch.okex15M_buy)
-
+            p2 = multiprocessing.Process(target = sch.okex240M_buy)
+            p3 = multiprocessing.Process(target = sch.okex60M_buy)
 
             #6个进程开始运行
   
-
+            p3.start()
             p2.start()
             p1.start()
 
-
+            p3.join()
             p2.join()
             p1.join()
             
@@ -582,7 +581,7 @@ class Datainfo:
         def okex60M_buy(self):
 
 
-            #self.getdatainfo('15')
+            self.getdatainfo('15')
             scheduler = BlockingScheduler()
             scheduler.add_job((self.getdatainfo), 'cron', args = ['60'], hour='*/1')
             print(scheduler.get_jobs())
@@ -655,10 +654,16 @@ class Datainfo:
 
             symbollist = list(df['instId'])
 
-            p1=multiprocessing.Process(target = Datainfo.eth_isbuy,args=[minute,symbollist[:3]]) 
-            p2=multiprocessing.Process(target = Datainfo.eth_isbuy,args=[minute,symbollist[3:6]])  
-            p3=multiprocessing.Process(target = Datainfo.eth_isbuy,args=[minute,symbollist[6:10]])  
-            p4=multiprocessing.Process(target = Datainfo.eth_isbuy,args=[minute,symbollist[10:]])  
+            p1=multiprocessing.Process(target = Datainfo.eth_isbuy,args=[minute,symbollist[:10]]) 
+            p2=multiprocessing.Process(target = Datainfo.eth_isbuy,args=[minute,symbollist[10:20]])  
+            p3=multiprocessing.Process(target = Datainfo.eth_isbuy,args=[minute,symbollist[20:30]])  
+            p4=multiprocessing.Process(target = Datainfo.eth_isbuy,args=[minute,symbollist[30:40]])  
+            p5=multiprocessing.Process(target = Datainfo.eth_isbuy,args=[minute,symbollist[40:50]]) 
+            p6=multiprocessing.Process(target = Datainfo.eth_isbuy,args=[minute,symbollist[50:60]])  
+            p7=multiprocessing.Process(target = Datainfo.eth_isbuy,args=[minute,symbollist[60:70]])  
+            p8=multiprocessing.Process(target = Datainfo.eth_isbuy,args=[minute,symbollist[70:80]]) 
+            p9=multiprocessing.Process(target = Datainfo.eth_isbuy,args=[minute,symbollist[80:90]]) 
+            p10=multiprocessing.Process(target = Datainfo.eth_isbuy,args=[minute,symbollist[90:]])  
  
 
 
@@ -666,6 +671,12 @@ class Datainfo:
             p2.start()
             p3.start()
             p4.start()
+            p5.start()
+            p6.start()
+            p7.start()
+            p8.start()
+            p9.start()
+            p10.start()
 
 
 
@@ -673,6 +684,12 @@ class Datainfo:
             p2.join()
             p3.join()
             p4.join()
+            p5.join()
+            p6.join()
+            p7.join()
+            p8.join()
+            p9.join()
+            p10.join()
 
    
 
