@@ -654,16 +654,21 @@ class Datainfo:
 
             symbollist = list(df['instId'])
 
-            p1=multiprocessing.Process(target = Datainfo.eth_isbuy,args=[minute,symbollist[:10]]) 
-            p2=multiprocessing.Process(target = Datainfo.eth_isbuy,args=[minute,symbollist[10:20]])  
-            p3=multiprocessing.Process(target = Datainfo.eth_isbuy,args=[minute,symbollist[20:30]])  
-            p4=multiprocessing.Process(target = Datainfo.eth_isbuy,args=[minute,symbollist[30:40]])  
-            p5=multiprocessing.Process(target = Datainfo.eth_isbuy,args=[minute,symbollist[40:50]]) 
-            p6=multiprocessing.Process(target = Datainfo.eth_isbuy,args=[minute,symbollist[50:60]])  
-            p7=multiprocessing.Process(target = Datainfo.eth_isbuy,args=[minute,symbollist[60:70]])  
-            p8=multiprocessing.Process(target = Datainfo.eth_isbuy,args=[minute,symbollist[70:80]]) 
-            p9=multiprocessing.Process(target = Datainfo.eth_isbuy,args=[minute,symbollist[80:90]]) 
-            p10=multiprocessing.Process(target = Datainfo.eth_isbuy,args=[minute,symbollist[90:]])  
+            symbols = []
+
+            for i in symbollist:
+
+                if(i[-8:-5]=='USD'):
+                    symbols.append(i)
+
+            p1=multiprocessing.Process(target = Datainfo.eth_isbuy,args=[minute,symbols[:5]]) 
+            p2=multiprocessing.Process(target = Datainfo.eth_isbuy,args=[minute,symbols[5:10]])  
+            p3=multiprocessing.Process(target = Datainfo.eth_isbuy,args=[minute,symbols[10:20]])  
+            p4=multiprocessing.Process(target = Datainfo.eth_isbuy,args=[minute,symbols[20:30]])  
+            p5=multiprocessing.Process(target = Datainfo.eth_isbuy,args=[minute,symbols[30:40]]) 
+            p6=multiprocessing.Process(target = Datainfo.eth_isbuy,args=[minute,symbols[40:50]])  
+            p7=multiprocessing.Process(target = Datainfo.eth_isbuy,args=[minute,symbols[50:]])  
+
  
 
 
@@ -674,9 +679,7 @@ class Datainfo:
             p5.start()
             p6.start()
             p7.start()
-            p8.start()
-            p9.start()
-            p10.start()
+   
 
 
 
@@ -687,9 +690,7 @@ class Datainfo:
             p5.join()
             p6.join()
             p7.join()
-            p8.join()
-            p9.join()
-            p10.join()
+
 
    
 
@@ -793,10 +794,15 @@ if __name__ == '__main__':
 
     symbollist = list(df['instId'])
 
-    
+    symbols = []
+
+    for i in symbollist:
+
+        if(i[-8:-5]=='USD'):
+            symbols.append(i)
     #将txt文件的所有内容读入到字符串str中
 
-    for symbol in symbollist:
+    for symbol in symbols:
     
         paths.append(f'./datas/okex/'+symbol)
     
