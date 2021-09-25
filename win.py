@@ -146,16 +146,25 @@ class Datainfo:
                 value = maxvalue.values - minvalue.values
                 value_618 = maxvalue.values - value * 0.618
                 value_192 = maxvalue.values - value * 0.192
+                VAR1 = ta.EMA(np.array(ta.EMA(np.array(df['macd'].values), timeperiod=9)), timeperiod=9)
+                kongpan = (VAR1[1:]-VAR1[:-1])/VAR1[:-1]*1000
+                ref_kongpan = (VAR1[2:]-VAR1[:-2])/VAR1[:-2]*1000
+                api_key, secret_key, passphrase, flag = Datainfo.get_userinfo()
+
 
                 if(not(X1 >5 and X2 < -3) and X1 >0 and X2 <0 and not(Y1 >0 and Y2 < 0) and dw['macd'].values[-1] > dw['macd'].values[-2] ):
-                    api_key, secret_key, passphrase, flag = Datainfo.get_userinfo()
                     Datainfo.orderbuy(api_key, secret_key, passphrase, flag,symbol)
                 elif(dw['close'].values[-1] > value_618 and dw['macd'].values[-1]>0 and dw['macd'].values[-2]<0  and dw['macd'].values[-1] > dw['macd'].values[-2] ):
-                    api_key, secret_key, passphrase, flag = Datainfo.get_userinfo()
                     Datainfo.orderbuy(api_key, secret_key, passphrase, flag,symbol)
                 elif(dw['macd'].values[-2] == dw['macd'][-40:].min() and dw['macd'].values[-2] < 0 and dw['macd'].values[-2] < dw['macd'].values[-1]):
-                    api_key, secret_key, passphrase, flag = Datainfo.get_userinfo()
                     Datainfo.orderbuy(api_key, secret_key, passphrase, flag,symbol)
+                elif(dw['macd'].values[-1] > dw['macd'].values[-2] +5 and  kongpan[-1:]>ref_kongpan[-1:] and kongpan[-1:]<50 and kongpan[-1:]>0 and (dw['macd'].values[-1]>dw['macd'].values[-2] or dw['macd'].values[-2]>dw['macd'].values[-3])):
+                    Datainfo.orderbuy(api_key, secret_key, passphrase, flag,symbol)
+                elif(dw['macd'].values[-1] > dw['macd'].values[-2] +5 and  dw['close'].values[-1] > value_618 and dw['close'].values[-1] < value_192  and dw['macd'].values[-1] > dw['macd'].values[-2] and dw['volume'].values[-1] > dw['volume'].values[-2]*1.01):
+                    Datainfo.orderbuy(api_key, secret_key, passphrase, flag,symbol)
+                elif(dw['macd'].values[-1] > dw['macd'].values[-2] +5 and  dw['macd'].values[-2] == dw['macd'][-40:].min() and dw['macd'].values[-2] < 0 and dw['macd'].values[-2] < dw['macd'].values[-1]):
+                    Datainfo.orderbuy(api_key, secret_key, passphrase, flag,symbol)
+        
 
                        
 
@@ -241,7 +250,7 @@ class Datainfo:
         # 设置持仓模式  Set Position mode
         result = accountAPI.get_position_mode('long_short_mode')
         # 设置杠杆倍数  Set Leverage
-        result = accountAPI.set_leverage(instId=symbol.upper()+'-USD-SWAP', lever='100', mgnMode='cross')
+        result = accountAPI.set_leverage(instId=symbol.upper()+'-USD-SWAP', lever='30', mgnMode='cross')
         #Datainfo.saveinfo('设置100倍保证金杠杆完毕。。。')
         # trade api
         tradeAPI = Trade.TradeAPI(api_key, secret_key, passphrase, False, flag)
@@ -268,11 +277,9 @@ class Datainfo:
 
         # 策略委托下单  Place Algo Order
         result = tradeAPI.place_algo_order(symbol, 'cross', 'sell', ordType='conditional',
-                                            sz='1',posSide='long', tpTriggerPx=str(float(lastprice)*1.01), tpOrdPx=str(float(lastprice)*1.01))
-        #Datainfo.saveinfo(str(datetime.now())+'设置止盈完毕。。。'+str(float(lastprice)+50))
+                                            sz='1',posSide='long', tpTriggerPx=str(float(lastprice)*1.05), tpOrdPx=str(float(lastprice)*1.05))
 
-
-        sendtext = '买入'+symbol+' -->> 1笔，价格是'+str(lastprice)+'，设置止盈完毕。。。'+str(float(lastprice)*1.01)
+        sendtext = '买入'+symbol+' -->> 1笔，价格是'+str(lastprice)+'，设置止盈完毕。。。'+str(float(lastprice)*1.05)
         Datainfo.save_finalinfo(sendtext)
         SendDingding.sender(sendtext)
 
