@@ -67,102 +67,97 @@ class Datainfo:
             tt = str((int(t * 1000)))
             ttt = str((int(round(t * 1000000))))
             
-            for i in range(10000):
-
-                try:
+            
                 
 
 
-                    #===获取close数据
+            #===获取close数据
 
         
 
 
-                    headers = {
-                    'authority': 'www.okex.com',
-                    'sec-ch-ua': '^\\^',
-                    'timeout': '10000',
-                    'x-cdn': 'https://static.okex.com',
-                    'devid': '7f1dea77-90cd-4746-a13f-a98bac4a333b',
-                    'accept-language': 'zh-CN',
-                    'sec-ch-ua-mobile': '?0',
-                    'user-agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.77 Safari/537.36',
-                    'accept': 'application/json',
-                    'x-utc': '8',
-                    'app-type': 'web',
-                    'sec-fetch-site': 'same-origin',
-                    'sec-fetch-mode': 'cors',
-                    'sec-fetch-dest': 'empty',
-                    'referer': 'https://www.okex.com/markets/swap-info/'+symbol.lower()[:-5],
-                    'cookie': 'locale=zh_CN; _gcl_au=1.1.1849415495.'+str(tt)+'; _ga=GA1.2.1506507962.'+str(tt)+'; _gid=GA1.2.256681666.'+str(tt)+'; first_ref=https^%^3A^%^2F^%^2Fwww.okex.com^%^2Fcaptcha^%^3Fto^%^3DaHR0cHM6Ly93d3cub2tleC5jb20vbWFya2V0cy9zd2FwLWRhdGEvZXRoLXVzZA^%^3D^%^3D; _gat_UA-35324627-3=1; amp_56bf9d=gqC_GMDGl4q5Tk-BJhT-oP...1f711b989.1f711fv58.0.2.2',
-                    }
+            headers = {
+            'authority': 'www.okex.com',
+            'sec-ch-ua': '^\\^',
+            'timeout': '10000',
+            'x-cdn': 'https://static.okex.com',
+            'devid': '7f1dea77-90cd-4746-a13f-a98bac4a333b',
+            'accept-language': 'zh-CN',
+            'sec-ch-ua-mobile': '?0',
+            'user-agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.77 Safari/537.36',
+            'accept': 'application/json',
+            'x-utc': '8',
+            'app-type': 'web',
+            'sec-fetch-site': 'same-origin',
+            'sec-fetch-mode': 'cors',
+            'sec-fetch-dest': 'empty',
+            'referer': 'https://www.okex.com/markets/swap-info/'+symbol.lower()[:-5],
+            'cookie': 'locale=zh_CN; _gcl_au=1.1.1849415495.'+str(tt)+'; _ga=GA1.2.1506507962.'+str(tt)+'; _gid=GA1.2.256681666.'+str(tt)+'; first_ref=https^%^3A^%^2F^%^2Fwww.okex.com^%^2Fcaptcha^%^3Fto^%^3DaHR0cHM6Ly93d3cub2tleC5jb20vbWFya2V0cy9zd2FwLWRhdGEvZXRoLXVzZA^%^3D^%^3D; _gat_UA-35324627-3=1; amp_56bf9d=gqC_GMDGl4q5Tk-BJhT-oP...1f711b989.1f711fv58.0.2.2',
+            }
 
-                    params = (
-                    ('granularity', str(int(minute)*60)),
-                    ('size', '1000'),
-                    ('t', str(ttt)),
-                    )
-                    response = r.get('https://www.okex.com/v2/perpetual/pc/public/instruments/'+symbol+'/candles', headers=headers, params=params)
+            params = (
+            ('granularity', str(int(minute)*60)),
+            ('size', '1000'),
+            ('t', str(ttt)),
+            )
+            response = r.get('https://www.okex.com/v2/perpetual/pc/public/instruments/'+symbol+'/candles', headers=headers, params=params)
 
-                    if response.cookies.get_dict(): #保持cookie有效 
-                            s=r.session()
-                            c = r.cookies.RequestsCookieJar()#定义一个cookie对象
-                            c.set('cookie-name', 'cookie-value')#增加cookie的值
-                            s.cookies.update(c)#更新s的cookie
-                            s.get(url = 'https://www.okex.com/v2/perpetual/pc/public/instruments/'+symbol+'/candles?granularity=900&size=1000&t='+str(ttt))
-                    dw = pd.DataFrame(eval(json.dumps(response.json()))['data'])
-                    #print(df)
-                    dw.columns = ['timestamps','open','high','low','close','vol','p']
-                    datelist = []
-                    for timestamp in dw['timestamps']:
-                        datelist.append(timestamp.split('.000Z')[0].replace('T',' '))
-                    dw['timestamps'] = datelist
-                    dw['timestamps'] = pd.to_datetime(dw['timestamps'])+pd.to_timedelta('8 hours')
-                    #df['timestamps'] = df['timestamps'].apply(lambda x:time.mktime(time.strptime(str(x),'%Y-%m-%d %H:%M:%S')))
-                    #print(dw)
-                    dw['vol'] = list(map(float, dw['vol'].values))
-                    dw['close'] = list(map(float, dw['close'].values))
+            if response.cookies.get_dict(): #保持cookie有效 
+                    s=r.session()
+                    c = r.cookies.RequestsCookieJar()#定义一个cookie对象
+                    c.set('cookie-name', 'cookie-value')#增加cookie的值
+                    s.cookies.update(c)#更新s的cookie
+                    s.get(url = 'https://www.okex.com/v2/perpetual/pc/public/instruments/'+symbol+'/candles?granularity=900&size=1000&t='+str(ttt))
+            dw = pd.DataFrame(eval(json.dumps(response.json()))['data'])
+            #print(df)
+            dw.columns = ['timestamps','open','high','low','close','vol','p']
+            datelist = []
+            for timestamp in dw['timestamps']:
+                datelist.append(timestamp.split('.000Z')[0].replace('T',' '))
+            dw['timestamps'] = datelist
+            dw['timestamps'] = pd.to_datetime(dw['timestamps'])+pd.to_timedelta('8 hours')
+            #df['timestamps'] = df['timestamps'].apply(lambda x:time.mktime(time.strptime(str(x),'%Y-%m-%d %H:%M:%S')))
+            #print(dw)
+            dw['vol'] = list(map(float, dw['vol'].values))
+            dw['close'] = list(map(float, dw['close'].values))
         
-                    dw.to_csv(f'./datas/okex/'+symbol+'/close.csv',index = False)
+            dw.to_csv(f'./datas/okex/'+symbol+'/close.csv',index = False)
        
-                    dw = pd.read_csv(f'./datas/okex/'+symbol+'/close.csv')
+            dw = pd.read_csv(f'./datas/okex/'+symbol+'/close.csv')
 
-                    Datainfo.getfulldata(dw,symbol)
+            Datainfo.getfulldata(dw,symbol)
 
-                    learning = Datainfo.getnextdata(dw,symbol)
+            learning = Datainfo.getnextdata(dw,symbol)
 
 
-                    #===判断是否买入或者卖出
+            #===判断是否买入或者卖出
         
-                    #df = pd.read_csv(f'./datas/okex/'+symbol+'/old_'+symbol+'.csv')
+            #df = pd.read_csv(f'./datas/okex/'+symbol+'/old_'+symbol+'.csv')
 
-                    if(dw['vol'].values[-1] and dw['p'].values[-1] and dw['vol'].values[-2] and dw['p'].values[-2] and learning):
-                        X1 = dw['close'].values[-1]/dw['vol'].values[-1]*dw['p'].values[-1]/dw['MA'].values[-1]*dw['obv'].values[-1]/dw['maobv'].values[-1]*dw['TRIX'].values[-1]*dw['MATRIX'].values[-1]*dw['close5'].values[-1]/dw['close135'].values[-1]*dw['macd'].values[-1]
-                        X2 = dw['close'].values[-2]/dw['vol'].values[-2]*dw['p'].values[-2]/dw['MA'].values[-2]*dw['obv'].values[-2]/dw['maobv'].values[-2]*dw['TRIX'].values[-2]*dw['MATRIX'].values[-2]*dw['close5'].values[-2]/dw['close135'].values[-2]*dw['macd'].values[-2]
+            if(dw['vol'].values[-1] and dw['p'].values[-1] and dw['vol'].values[-2] and dw['p'].values[-2] and learning):
+                X1 = dw['close'].values[-1]/dw['vol'].values[-1]*dw['p'].values[-1]/dw['MA'].values[-1]*dw['obv'].values[-1]/dw['maobv'].values[-1]*dw['TRIX'].values[-1]*dw['MATRIX'].values[-1]*dw['close5'].values[-1]/dw['close135'].values[-1]*dw['macd'].values[-1]
+                X2 = dw['close'].values[-2]/dw['vol'].values[-2]*dw['p'].values[-2]/dw['MA'].values[-2]*dw['obv'].values[-2]/dw['maobv'].values[-2]*dw['TRIX'].values[-2]*dw['MATRIX'].values[-2]*dw['close5'].values[-2]/dw['close135'].values[-2]*dw['macd'].values[-2]
 
-                        Y1 = dw['close'].values[-1]*float(dw['MATRIX'].values[-1])*float(dw['TRIX'].values[-1])
-                        Y2 = dw['close'].values[-2]*float(dw['MATRIX'].values[-2])*float(dw['TRIX'].values[-2])
+                Y1 = dw['close'].values[-1]*float(dw['MATRIX'].values[-1])*float(dw['TRIX'].values[-1])
+                Y2 = dw['close'].values[-2]*float(dw['MATRIX'].values[-2])*float(dw['TRIX'].values[-2])
 
-                        maxvalue = dw.iloc[-50:][(dw['macd'] == dw['macd'][-50:].max())]['close']
-                        minvalue = dw.iloc[-50:][(dw['macd'] == dw['macd'][-50:].min())]['close']
-                        value = maxvalue.values - minvalue.values
-                        value_618 = maxvalue.values - value * 0.618
-                        value_192 = maxvalue.values - value * 0.192
+                maxvalue = dw.iloc[-50:][(dw['macd'] == dw['macd'][-50:].max())]['close']
+                minvalue = dw.iloc[-50:][(dw['macd'] == dw['macd'][-50:].min())]['close']
+                value = maxvalue.values - minvalue.values
+                value_618 = maxvalue.values - value * 0.618
+                value_192 = maxvalue.values - value * 0.192
 
-                        if(not(X1 >5 and X2 < -3) and X1 >0 and X2 <0 and not(Y1 >0 and Y2 < 0) and dw['macd'].values[-1] > dw['macd'].values[-2] ):
-                            api_key, secret_key, passphrase, flag = Datainfo.get_userinfo()
-                            Datainfo.orderbuy(api_key, secret_key, passphrase, flag,symbol)
-                        elif(dw['close'].values[-1] > value_618 and dw['macd'].values[-1]>0 and dw['macd'].values[-2]<0  and dw['macd'].values[-1] > dw['macd'].values[-2] ):
-                            api_key, secret_key, passphrase, flag = Datainfo.get_userinfo()
-                            Datainfo.orderbuy(api_key, secret_key, passphrase, flag,symbol)
-                        elif(dw['macd'].values[-2] == dw['macd'][-40:].min() and dw['macd'].values[-2] < 0 and dw['macd'].values[-2] < dw['macd'].values[-1]):
-                            api_key, secret_key, passphrase, flag = Datainfo.get_userinfo()
-                            Datainfo.orderbuy(api_key, secret_key, passphrase, flag,symbol)
+                if(not(X1 >5 and X2 < -3) and X1 >0 and X2 <0 and not(Y1 >0 and Y2 < 0) and dw['macd'].values[-1] > dw['macd'].values[-2] ):
+                    api_key, secret_key, passphrase, flag = Datainfo.get_userinfo()
+                    Datainfo.orderbuy(api_key, secret_key, passphrase, flag,symbol)
+                elif(dw['close'].values[-1] > value_618 and dw['macd'].values[-1]>0 and dw['macd'].values[-2]<0  and dw['macd'].values[-1] > dw['macd'].values[-2] ):
+                    api_key, secret_key, passphrase, flag = Datainfo.get_userinfo()
+                    Datainfo.orderbuy(api_key, secret_key, passphrase, flag,symbol)
+                elif(dw['macd'].values[-2] == dw['macd'][-40:].min() and dw['macd'].values[-2] < 0 and dw['macd'].values[-2] < dw['macd'].values[-1]):
+                    api_key, secret_key, passphrase, flag = Datainfo.get_userinfo()
+                    Datainfo.orderbuy(api_key, secret_key, passphrase, flag,symbol)
 
-                        break
-                except:
-                    time.sleep(0.5)
-                    continue
+                       
 
 
 
@@ -557,7 +552,7 @@ class Datainfo:
         def okex15M_buy(self):
 
 
-            self.getdatainfo('15')
+            #self.getdatainfo('15')
             scheduler = BlockingScheduler()
             scheduler.add_job((self.getdatainfo), 'cron', args = ['15'], minute='*/15')
             print(scheduler.get_jobs())
@@ -581,7 +576,7 @@ class Datainfo:
         def okex60M_buy(self):
 
 
-            self.getdatainfo('15')
+            #self.getdatainfo('15')
             scheduler = BlockingScheduler()
             scheduler.add_job((self.getdatainfo), 'cron', args = ['60'], hour='*/1')
             print(scheduler.get_jobs())
@@ -667,7 +662,7 @@ class Datainfo:
             p4=multiprocessing.Process(target = Datainfo.eth_isbuy,args=[minute,symbols[20:30]])  
             p5=multiprocessing.Process(target = Datainfo.eth_isbuy,args=[minute,symbols[30:40]]) 
             p6=multiprocessing.Process(target = Datainfo.eth_isbuy,args=[minute,symbols[40:50]])  
-            p7=multiprocessing.Process(target = Datainfo.eth_isbuy,args=[minute,symbols[50:]])  
+
 
  
 
@@ -678,7 +673,7 @@ class Datainfo:
             p4.start()
             p5.start()
             p6.start()
-            p7.start()
+  
    
 
 
@@ -689,7 +684,7 @@ class Datainfo:
             p4.join()
             p5.join()
             p6.join()
-            p7.join()
+   
 
 
    
