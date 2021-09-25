@@ -53,124 +53,127 @@ class Datainfo:
 
     
 
-    def eth_isbuy(minute,symbol):
+    def eth_isbuy(minute,symbollist):
 
-        result = '不买卖'
-        ones = ''
+        for symbol in symbollist:
+
+            result = '不买卖'
+            ones = ''
 
  
-        t = time.time()
+            t = time.time()
 
-        #print (t)                       #原始时间数据
-        #print (int(t))                  #秒级时间戳
-        #print (int(round(t * 1000)))    #毫秒级时间戳
-        #print (int(round(t * 1000000))) #微秒级时间戳
-        tt = str((int(t * 1000)))
-        ttt = str((int(round(t * 1000000))))
-        headers = {
-            'authority': 'www.okex.com',
-            'sec-ch-ua': '^\\^Chromium^\\^;v=^\\^94^\\^, ^\\^Google',
-            'timeout': '10000',
-            'x-cdn': 'https://static.okex.com',
-            'devid': 'd2062109-476b-4fcf-95d2-b13156cb9915',
-            'accept-language': 'zh-CN',
-            'sec-ch-ua-mobile': '?0',
-            'user-agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/94.0.4606.54 Safari/537.36',
-            'accept': 'application/json',
-            'x-utc': '8',
-            'app-type': 'web',
-            'sec-ch-ua-platform': '^\\^Windows^\\^',
-            'sec-fetch-site': 'same-origin',
-            'sec-fetch-mode': 'cors',
-            'sec-fetch-dest': 'empty',
-            'referer': 'https://www.okex.com/markets/spot-info/btc-usdt',
-            'cookie': 'locale=zh_CN; _gcl_au=1.1.307378181.1632526384; _ga=GA1.2.1775611624.1632526384; _gid=GA1.2.1070759588.1632526384; first_ref=https^%^3A^%^2F^%^2Fwww.okex.com^%^2Fmarkets^%^2Fspot-list; _gat_UA-35324627-3=1; amp_56bf9d=KkwRObhJezWtt8mdKRYolT...1fgd5vsvn.1fgd5vsvq.0.1.1',
-        }
+            #print (t)                       #原始时间数据
+            #print (int(t))                  #秒级时间戳
+            #print (int(round(t * 1000)))    #毫秒级时间戳
+            #print (int(round(t * 1000000))) #微秒级时间戳
+            tt = str((int(t * 1000)))
+            ttt = str((int(round(t * 1000000))))
+            headers = {
+                'authority': 'www.okex.com',
+                'sec-ch-ua': '^\\^Chromium^\\^;v=^\\^94^\\^, ^\\^Google',
+                'timeout': '10000',
+                'x-cdn': 'https://static.okex.com',
+                'devid': 'd2062109-476b-4fcf-95d2-b13156cb9915',
+                'accept-language': 'zh-CN',
+                'sec-ch-ua-mobile': '?0',
+                'user-agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/94.0.4606.54 Safari/537.36',
+                'accept': 'application/json',
+                'x-utc': '8',
+                'app-type': 'web',
+                'sec-ch-ua-platform': '^\\^Windows^\\^',
+                'sec-fetch-site': 'same-origin',
+                'sec-fetch-mode': 'cors',
+                'sec-fetch-dest': 'empty',
+                'referer': 'https://www.okex.com/markets/spot-info/btc-usdt',
+                'cookie': 'locale=zh_CN; _gcl_au=1.1.307378181.1632526384; _ga=GA1.2.1775611624.1632526384; _gid=GA1.2.1070759588.1632526384; first_ref=https^%^3A^%^2F^%^2Fwww.okex.com^%^2Fmarkets^%^2Fspot-list; _gat_UA-35324627-3=1; amp_56bf9d=KkwRObhJezWtt8mdKRYolT...1fgd5vsvn.1fgd5vsvq.0.1.1',
+            }
 
-        params = (
-            ('instId', symbol),
-            ('bar', str(int(minute))+'m'),
-            ('after', ''),
-            ('limit', '10000'),
-            ('t', str(ttt)),
-        )
+            params = (
+                ('instId', symbol),
+                ('bar', str(int(minute))+'m'),
+                ('after', ''),
+                ('limit', '10000'),
+                ('t', str(ttt)),
+            )
 
-        response = r.get('https://www.okex.com/priapi/v5/market/candles', headers=headers, params=params)
+            response = r.get('https://www.okex.com/priapi/v5/market/candles', headers=headers, params=params)
 
-        if response.cookies.get_dict(): #保持cookie有效 
-                s=r.session()
-                c = r.cookies.RequestsCookieJar()#定义一个cookie对象
-                c.set('cookie-name', 'cookie-value')#增加cookie的值
-                s.cookies.update(c)#更新s的cookie
-                s.get(url = 'https://www.okex.com/v2/perpetual/pc/public/instruments/'+symbol+'/candles?granularity=900&size=1000&t='+str(ttt))
-        dw = pd.DataFrame(eval(json.dumps(response.json()))['data'])
-        #print(df)
-        dw.columns = ['timestamps','open','high','low','close','vol','p']
+            if response.cookies.get_dict(): #保持cookie有效 
+                    s=r.session()
+                    c = r.cookies.RequestsCookieJar()#定义一个cookie对象
+                    c.set('cookie-name', 'cookie-value')#增加cookie的值
+                    s.cookies.update(c)#更新s的cookie
+                    s.get(url = 'https://www.okex.com/v2/perpetual/pc/public/instruments/'+symbol+'/candles?granularity=900&size=1000&t='+str(ttt))
+            dw = pd.DataFrame(eval(json.dumps(response.json()))['data'])
+            #print(df)
+            dw.columns = ['timestamps','open','high','low','close','vol','p']
                 
-        datelist = []
-        for timestamp in dw['timestamps']:
-            s=time.localtime(int(timestamp)/1000)
-            ss=time.asctime(s)
-            pd.to_datetime(ss)
-            datelist.append(pd.to_datetime(ss))
+            datelist = []
+            for timestamp in dw['timestamps']:
+                s=time.localtime(int(timestamp)/1000)
+                ss=time.asctime(s)
+                pd.to_datetime(ss)
+                datelist.append(pd.to_datetime(ss))
     
-        dw['timestamps'] = datelist
-        dw['timestamps'] = pd.to_datetime(dw['timestamps'])
+            dw['timestamps'] = datelist
+            dw['timestamps'] = pd.to_datetime(dw['timestamps'])
 
-        dw['vol'] = list(map(float, dw['vol'].values))
-        dw['close'] = list(map(float, dw['close'].values))
+            dw['vol'] = list(map(float, dw['vol'].values))
+            dw['close'] = list(map(float, dw['close'].values))
 
-        #倒序内容排列
-        dw = dw.iloc[::-1]
+            #倒序内容排列
+            dw = dw.iloc[::-1]
 
-        dw.to_csv(f'./datas/okex/'+symbol+'/close.csv',index = False)
-        time.sleep(int(minute))
-        dw = pd.read_csv(f'./datas/okex/'+symbol+'/close.csv')
-        time.sleep(int(minute))
+            dw.to_csv(f'./datas/okex/'+symbol+'/close.csv',index = False)
+            time.sleep(int(minute))
+            dw = pd.read_csv(f'./datas/okex/'+symbol+'/close.csv')
+            time.sleep(int(minute))
 
-        Datainfo.getfulldata(dw,symbol)
+            Datainfo.getfulldata(dw,symbol)
 
-        learning = Datainfo.getnextdata(dw,symbol)
+            learning = Datainfo.getnextdata(dw,symbol)
 
 
-        #===判断是否买入或者卖出
+            #===判断是否买入或者卖出
         
-        #df = pd.read_csv(f'./datas/okex/'+symbol+'/old_'+symbol+'.csv')
+            #df = pd.read_csv(f'./datas/okex/'+symbol+'/old_'+symbol+'.csv')
 
-        if(dw['vol'].values[-1] and dw['p'].values[-1] and dw['vol'].values[-2] and dw['p'].values[-2] and learning):
-            X1 = dw['close'].values[-1]/dw['vol'].values[-1]*dw['p'].values[-1]/dw['MA'].values[-1]*dw['obv'].values[-1]/dw['maobv'].values[-1]*dw['TRIX'].values[-1]*dw['MATRIX'].values[-1]*dw['close5'].values[-1]/dw['close135'].values[-1]*dw['macd'].values[-1]
-            X2 = dw['close'].values[-2]/dw['vol'].values[-2]*dw['p'].values[-2]/dw['MA'].values[-2]*dw['obv'].values[-2]/dw['maobv'].values[-2]*dw['TRIX'].values[-2]*dw['MATRIX'].values[-2]*dw['close5'].values[-2]/dw['close135'].values[-2]*dw['macd'].values[-2]
+            if(dw['vol'].values[-1] and dw['p'].values[-1] and dw['vol'].values[-2] and dw['p'].values[-2] and learning):
+                X1 = dw['close'].values[-1]/dw['vol'].values[-1]*dw['p'].values[-1]/dw['MA'].values[-1]*dw['obv'].values[-1]/dw['maobv'].values[-1]*dw['TRIX'].values[-1]*dw['MATRIX'].values[-1]*dw['close5'].values[-1]/dw['close135'].values[-1]*dw['macd'].values[-1]
+                X2 = dw['close'].values[-2]/dw['vol'].values[-2]*dw['p'].values[-2]/dw['MA'].values[-2]*dw['obv'].values[-2]/dw['maobv'].values[-2]*dw['TRIX'].values[-2]*dw['MATRIX'].values[-2]*dw['close5'].values[-2]/dw['close135'].values[-2]*dw['macd'].values[-2]
 
-            Y1 = dw['close'].values[-1]*float(dw['MATRIX'].values[-1])*float(dw['TRIX'].values[-1])
-            Y2 = dw['close'].values[-2]*float(dw['MATRIX'].values[-2])*float(dw['TRIX'].values[-2])
+                Y1 = dw['close'].values[-1]*float(dw['MATRIX'].values[-1])*float(dw['TRIX'].values[-1])
+                Y2 = dw['close'].values[-2]*float(dw['MATRIX'].values[-2])*float(dw['TRIX'].values[-2])
 
 
-            if(not(X1 >5 and X2 < -3) and X1 >0 and X2 <0 and not(Y1 >0 and Y2 < 0) and dw['macd'].values[-1] > dw['macd'].values[-2] ):
-                result = '买入'
-                ones = '满足条件1'
+                if(not(X1 >5 and X2 < -3) and X1 >0 and X2 <0 and not(Y1 >0 and Y2 < 0) and dw['macd'].values[-1] > dw['macd'].values[-2] ):
+                    result = '买入'
+                    ones = '满足条件1'
                     
-            maxvalue = dw.iloc[-50:][(dw['macd'] == dw['macd'][-50:].max())]['close']
-            minvalue = dw.iloc[-50:][(dw['macd'] == dw['macd'][-50:].min())]['close']
-            value = maxvalue.values - minvalue.values
-            value_618 = maxvalue.values - value * 0.618
-            value_192 = maxvalue.values - value * 0.192
+                maxvalue = dw.iloc[-50:][(dw['macd'] == dw['macd'][-50:].max())]['close']
+                minvalue = dw.iloc[-50:][(dw['macd'] == dw['macd'][-50:].min())]['close']
+                value = maxvalue.values - minvalue.values
+                value_618 = maxvalue.values - value * 0.618
+                value_192 = maxvalue.values - value * 0.192
 
 
-            if(dw['close'].values[-1] > value_618 and dw['macd'].values[-1]>0 and dw['macd'].values[-2]<0  and dw['macd'].values[-1] > dw['macd'].values[-2] ):
-                result = '买入'
-                ones = '满足条件2'
-            if(dw['macd'].values[-2] == dw['macd'][-40:].min() and dw['macd'].values[-2] < 0 and dw['macd'].values[-2] < dw['macd'].values[-1]):
-                result = '买入'
-                ones = '满足条件3'
+                if(dw['close'].values[-1] > value_618 and dw['macd'].values[-1]>0 and dw['macd'].values[-2]<0  and dw['macd'].values[-1] > dw['macd'].values[-2] ):
+                    result = '买入'
+                    ones = '满足条件2'
+                if(dw['macd'].values[-2] == dw['macd'][-40:].min() and dw['macd'].values[-2] < 0 and dw['macd'].values[-2] < dw['macd'].values[-1]):
+                    result = '买入'
+                    ones = '满足条件3'
 
-        print(str(datetime.now())+'--->>>'+ones+'--->>>'+result)
-        Datainfo.saveinfo('--->>>'+ones+'--->>>'+result+'--->>>')
+            print(str(datetime.now())+'--->>>'+ones+'--->>>'+result)
+            Datainfo.saveinfo('--->>>'+ones+'--->>>'+result+'--->>>')
         
-        if('买入' == result):
+            if('买入' == result):
                     
 
-            api_key, secret_key, passphrase, flag = Datainfo.get_userinfo()
-            Datainfo.orderbuy(api_key, secret_key, passphrase, flag,symbol)
+                sendtext = '买入'+symbol+' -->> ,价格是'+str(lastprice))
+                Datainfo.save_finalinfo(sendtext)
+                SendDingding.sender(sendtext)
 
 
     def getfulldata(df,symbol):
@@ -344,10 +347,10 @@ class Datainfo:
 
         #训练模型
         clf = svm.SVR(kernel='linear')
-        features_train = df_20d[:800]
-        labels_train = df_20d['close'].shift(-1)[:800]     # 回归问题的标签就是预测的就是股价，下一天的收盘价就是前一天的标签；
-        features_test = df_20d[800:]
-        labels_test = df_20d['close'].shift(-1)[800:]
+        features_train = df_20d[:80]
+        labels_train = df_20d['close'].shift(-1)[:80]     # 回归问题的标签就是预测的就是股价，下一天的收盘价就是前一天的标签；
+        features_test = df_20d[80:]
+        labels_test = df_20d['close'].shift(-1)[80:]
         clf.fit(features_train, labels_train)     # 模型的训练过程；
 
         predict = clf.predict(features_test)      # 给你测试集的特征，返回的是测试集的标签，回归问题的标签就是股价；
@@ -356,8 +359,8 @@ class Datainfo:
         dft['predict'] = predict     # 把前面预测的测试集的股价给添加到DataFrame中；
         dft = dft.rename(columns = {'close': 'Next Close', 'predict':'Predict Next Close'})
 
-        current_close = df_20d[['close']].iloc[800:]
-        next_open = df[['open']].iloc[820:].shift(-1)
+        current_close = df_20d[['close']].iloc[80:]
+        next_open = df[['open']].iloc[82:].shift(-1)
 
         #获取df1 df2的值
         df1 = pd.merge(dft, current_close, left_index=True, right_index=True)
@@ -388,18 +391,16 @@ class Datainfo:
 
             #声明6进程保存数据
             p1 = multiprocessing.Process(target = sch.showwindows)
-            p2 = multiprocessing.Process(target = sch.okex5M_buy)
-            p3 = multiprocessing.Process(target = sch.okex15M_buy)
+            p2 = multiprocessing.Process(target = sch.okex15M_buy)
 
 
             #6个进程开始运行
   
 
-            p3.start()
             p2.start()
             p1.start()
 
-            p3.join()
+
             p2.join()
             p1.join()
             
@@ -652,8 +653,70 @@ class Datainfo:
 
             symbollist = list(df['instId'])
 
-            for symbol in symbollist:
-                multiprocessing.Process(target = Datainfo.eth_isbuy(minute,symbol))       
+            p1=multiprocessing.Process(target = Datainfo.eth_isbuy,args=[minute,symbollist[:20]]) 
+            p2=multiprocessing.Process(target = Datainfo.eth_isbuy,args=[minute,symbollist[20:40]])  
+            p3=multiprocessing.Process(target = Datainfo.eth_isbuy,args=[minute,symbollist[40:60]])  
+            p4=multiprocessing.Process(target = Datainfo.eth_isbuy,args=[minute,symbollist[60:80]])  
+            p5=multiprocessing.Process(target = Datainfo.eth_isbuy,args=[minute,symbollist[80:100]])  
+            p6=multiprocessing.Process(target = Datainfo.eth_isbuy,args=[minute,symbollist[100:120]])  
+            p7=multiprocessing.Process(target = Datainfo.eth_isbuy,args=[minute,symbollist[120:140]])  
+            p8=multiprocessing.Process(target = Datainfo.eth_isbuy,args=[minute,symbollist[140:180]])  
+            p9=multiprocessing.Process(target = Datainfo.eth_isbuy,args=[minute,symbollist[180:200]])  
+            p10=multiprocessing.Process(target = Datainfo.eth_isbuy,args=[minute,symbollist[200:220]])  
+            p11=multiprocessing.Process(target = Datainfo.eth_isbuy,args=[minute,symbollist[220:240]])  
+            p12=multiprocessing.Process(target = Datainfo.eth_isbuy,args=[minute,symbollist[240:260]])  
+            p13=multiprocessing.Process(target = Datainfo.eth_isbuy,args=[minute,symbollist[260:280]]) 
+            p14=multiprocessing.Process(target = Datainfo.eth_isbuy,args=[minute,symbollist[280:300]])  
+            p15=multiprocessing.Process(target = Datainfo.eth_isbuy,args=[minute,symbollist[300:320]])  
+            p16=multiprocessing.Process(target = Datainfo.eth_isbuy,args=[minute,symbollist[320:340]])  
+            p17=multiprocessing.Process(target = Datainfo.eth_isbuy,args=[minute,symbollist[340:360]])  
+            p18=multiprocessing.Process(target = Datainfo.eth_isbuy,args=[minute,symbollist[360:380]])  
+            p19=multiprocessing.Process(target = Datainfo.eth_isbuy,args=[minute,symbollist[380:400]])  
+            p20=multiprocessing.Process(target = Datainfo.eth_isbuy,args=[minute,symbollist[400:]])  
+
+
+            p1.start()
+            p2.start()
+            p3.start()
+            p4.start()
+            p5.start()
+            p6.start()
+            p7.start()
+            p8.start()
+            p9.start()
+            p10.start()
+            p11.start()
+            p12.start()
+            p13.start()
+            p14.start()
+            p15.start()
+            p16.start()
+            p17.start()
+            p18.start()
+            p19.start()
+            p20.start()
+
+
+            p1.join()
+            p2.join()
+            p3.join()
+            p4.join()
+            p5.join()
+            p6.join()
+            p7.join()
+            p8.join()
+            p9.join()
+            p10.join()
+            p11.join()
+            p12.join()
+            p13.join()
+            p14.join()
+            p15.join()
+            p16.join()
+            p17.join()
+            p18.join()
+            p19.join()
+            p20.join()
    
 
            
