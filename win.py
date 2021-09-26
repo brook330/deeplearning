@@ -146,7 +146,7 @@ class Datainfo:
                 value = maxvalue.values - minvalue.values
                 value_618 = maxvalue.values - value * 0.618
                 value_192 = maxvalue.values - value * 0.192
-                VAR1 = ta.EMA(np.array(ta.EMA(np.array(df['macd'].values), timeperiod=9)), timeperiod=9)
+                VAR1 = ta.EMA(np.array(ta.EMA(np.array(dw['macd'].values), timeperiod=9)), timeperiod=9)
                 kongpan = (VAR1[1:]-VAR1[:-1])/VAR1[:-1]*1000
                 ref_kongpan = (VAR1[2:]-VAR1[:-2])/VAR1[:-2]*1000
                 api_key, secret_key, passphrase, flag = Datainfo.get_userinfo()
@@ -250,7 +250,7 @@ class Datainfo:
         # 设置持仓模式  Set Position mode
         result = accountAPI.get_position_mode('long_short_mode')
         # 设置杠杆倍数  Set Leverage
-        result = accountAPI.set_leverage(instId=symbol.upper()+'-USD-SWAP', lever='30', mgnMode='cross')
+        result = accountAPI.set_leverage(instId=symbol.upper()+'-USD-SWAP', lever='50', mgnMode='cross')
         #Datainfo.saveinfo('设置100倍保证金杠杆完毕。。。')
         # trade api
         tradeAPI = Trade.TradeAPI(api_key, secret_key, passphrase, False, flag)
