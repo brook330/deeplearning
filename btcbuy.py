@@ -58,21 +58,7 @@ class Datainfo:
         result = '不买卖'
         ones = ''
 
-        api_key,secret_key,passphrase,flag = Datainfo.get_userinfo()
-
-        #判断订单是否大于5单，大于则不买入
-        #trade api
-        tradeAPI = Trade.TradeAPI(api_key, secret_key, passphrase, False, flag)
-        list_string_buy = ['buy']
-        list_string_sell = ['sell']
-        print(tradeAPI.get_fills())
-        list_text = list(pd.DataFrame(eval(str(tradeAPI.get_fills()))['data'])['side'].head(300).values)
-        all_words_buy = list(filter(lambda text: all([word in text for word in list_string_buy]), list_text ))
-        all_words_sell = list(filter(lambda text: all([word in text for word in list_string_sell]), list_text ))
- 
-        if(len(all_words_buy)-len(all_words_sell)>=20):
-            Datainfo.saveinfo(symbol+'买单大于20单返回。。。>>>')
-            return result
+        
 
         for i in range(10000):
 
@@ -86,51 +72,7 @@ class Datainfo:
                 tt = str((int(t * 1000)))
                 ttt = str(int(round(t * 1000)))
 
-                #=====获取vol数据
-                headers = {
-                    'authority': 'www.okex.com',
-                    'sec-ch-ua': '^\\^',
-                    'timeout': '10000',
-                    'x-cdn': 'https://static.okex.com',
-                    'devid': '7f1dea77-90cd-4746-a13f-a98bac4a333b',
-                    'accept-language': 'zh-CN',
-                    'sec-ch-ua-mobile': '?0',
-                    'user-agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.77 Safari/537.36',
-                    'accept': 'application/json',
-                    'x-utc': '8',
-                    'app-type': 'web',
-                    'sec-fetch-site': 'same-origin',
-                    'sec-fetch-mode': 'cors',
-                    'sec-fetch-dest': 'empty',
-                    'referer': 'https://www.okex.com/markets/swap-data/'+symbol+'-usd',
-                    'cookie': '_gcl_au=1.1.1849415495.'+str(tt)+'; _ga=GA1.2.1506507962.'+str(tt)+'; first_ref=https^%^3A^%^2F^%^2Fwww.okex.com^%^2Fcaptcha^%^3Fto^%^3DaHR0cHM6Ly93d3cub2tleC5jb20vbWFya2V0cy9zd2FwLWRhdGEvZXRoLXVzZA^%^3D^%^3D; locale=zh_CN; _gid=GA1.2.802198982.'+str(tt)+'; amp_56bf9d=gqC_GMDGl4q5Tk-BJhT-oP...1f8fiso4n.1f8fiu841.1.2.3',
-                }
-
-                params = (
-                    ('t', str(ttt)),
-                    ('unitType', '0'),
-                )
-
-                response = r.get('https://www.okex.com/v3/futures/pc/market/takerTradeVolume/'+symbol.upper()+'', headers=headers, params=params)
-
-                if response.cookies.get_dict(): #保持cookie有效 
-                        s=r.session()
-                        c = r.cookies.RequestsCookieJar()#定义一个cookie对象
-                        c.set('cookie-name', 'cookie-value')#增加cookie的值
-                        s.cookies.update(c)#更新s的cookie
-                        s.get(url = 'https://www.okex.com/v3/futures/pc/market/takerTradeVolume/'+symbol.upper()+'?t='+str(ttt)+'&unitType=0')
-                df = pd.DataFrame(response.json()['data'])
-
-                df['timestamps'] = list(map(float, df['timestamps'].values))
-                df['timestamps'] = pd.to_datetime(df['timestamps'],unit='ms')+pd.to_timedelta('8 hours')
-
-                #列倒序内容排列
-                df = df.iloc[:,::-1]
-
-
-
-
-                df.to_csv(f'./datas/okex/'+symbol+'/old_'+symbol+'.csv',index=False)
+                
 
 
                 #===获取close数据
@@ -209,8 +151,7 @@ class Datainfo:
                     value = maxvalue.values - minvalue.values
                     value_618 = maxvalue.values - value * 0.618
                     value_192 = maxvalue.values - value * 0.192
-                    buyVolumes = df['buyVolumes'].tail(20).values
-                    sellVolumes = df['sellVolumes'].tail(20).values
+  
 
                     TODAYVOLATILITY = np.std(dw['close'].values,ddof =30)#当日市场波动
                     YESTERDAYVOLATILITY = np.std(dw['close'].values[1:],ddof =30)#昨日市场波动
@@ -239,18 +180,28 @@ class Datainfo:
                     VAR3=ta.EMA(ta.EMA(np.array(BUYPOINT1), timeperiod=60), timeperiod=60)[-(LOOKBACKDAYS+1):-1]
                     VAR4=ta.EMA(ta.EMA(np.array(BUYPOINT2), timeperiod=60), timeperiod=60)[-(LOOKBACKDAYS+2):-2]
 
+                    VAR11 = ta.EMA(np.array(ta.EMA(np.array(dw['macd'].values), timeperiod=9)), timeperiod=9)
+                    kongpan = (VAR11[1:]-VAR11[:-1])/VAR11[:-1]*1000
+                    ref_kongpan = (VAR11[2:]-VAR11[:-2])/VAR11[:-2]*1000
+
                     if(not(X1 >5 and X2 < -3) and X1 >0 and X2 <0 and not(Y1 >0 and Y2 < 0) and dw['macd'].values[-1] > dw['macd'].values[-2] ):
                         result = '买入'
                         ones = '满足条件1'
-                    elif(dw['close'].values[-1] > value_618 and dw['close'].values[-1] < value_192  and dw['macd'].values[-1] > dw['macd'].values[-2] and (sum(buyVolumes)/len(buyVolumes)) / (sum(sellVolumes)/len(sellVolumes)) > 1.01):
+                    elif(dw['close'].values[-1] > value_618 and dw['close'].values[-1] < value_192  and dw['macd'].values[-1] > dw['macd'].values[-2]):
                         result = '买入'
                         ones = '满足条件2'
-                    elif(dw['macd'].values[-2] == dw['macd'][-40:].min() and dw['macd'].values[-2] < 0 and dw['macd'].values[-2] < dw['macd'].values[-1]):
-                        result = '买入'
-                        ones = '满足条件3'
                     elif((VAR1-VAR2).max()/VAR2.max()>0 and (VAR3-VAR4).max()/VAR4.max()<=0):
                         result = '买入'
+                        ones = '满足条件3'
+                    elif(dw['macd'].values[-1] > dw['macd'].values[-2] +5 and  kongpan[-1:]>ref_kongpan[-1:] and kongpan[-1:]<50 and kongpan[-1:]>0 and (dw['macd'].values[-1]>dw['macd'].values[-2] or dw['macd'].values[-2]>dw['macd'].values[-3])):
+                        result = '买入'
                         ones = '满足条件4'
+                    elif(dw['macd'].values[-1] > dw['macd'].values[-2] +5 and  dw['close'].values[-1] > value_618 and dw['close'].values[-1] < value_192  and dw['macd'].values[-1] > dw['macd'].values[-2] and dw['volume'].values[-1] > dw['volume'].values[-2]*1.01):
+                        result = '买入'
+                        ones = '满足条件5'
+                    elif(dw['macd'].values[-1] > dw['macd'].values[-2] +5 and  dw['macd'].values[-2] == dw['macd'][-40:].min() and dw['macd'].values[-2] < 0 and dw['macd'].values[-2] < dw['macd'].values[-1]):
+                        result = '买入'
+                        ones = '满足条件6'
                 break
             except:
                 time.sleep(5)
@@ -339,14 +290,14 @@ class Datainfo:
         # 设置持仓模式  Set Position mode
         result = accountAPI.get_position_mode('long_short_mode')
         # 设置杠杆倍数  Set Leverage
-        result = accountAPI.set_leverage(instId=symbol.upper()+'-USD-SWAP', lever='100', mgnMode='cross')
+        result = accountAPI.set_leverage(instId=symbol.upper()+'-USD-SWAP', lever='75', mgnMode='cross')
         #Datainfo.saveinfo('设置100倍保证金杠杆完毕。。。')
         # trade api
         tradeAPI = Trade.TradeAPI(api_key, secret_key, passphrase, False, flag)
         # 批量下单  Place Multiple Orders
         # 批量下单  Place Multiple Orders
         result = tradeAPI.place_multiple_orders([
-             {'instId': symbol.upper()+'-USD-SWAP', 'tdMode': 'cross', 'side': 'buy', 'ordType': 'market', 'sz': '10',
+             {'instId': symbol.upper()+'-USD-SWAP', 'tdMode': 'cross', 'side': 'buy', 'ordType': 'market', 'sz': '1',
               'posSide': 'long',
               'clOrdId': 'a12344', 'tag': 'test1210'},
     
@@ -366,12 +317,12 @@ class Datainfo:
 
         # 策略委托下单  Place Algo Order
         result = tradeAPI.place_algo_order(symbol.upper()+'-USD-SWAP', 'cross', 'sell', ordType='conditional',
-                                            sz='10',posSide='long', tpTriggerPx=str(float(lastprice)+200), tpOrdPx=str(float(lastprice)+200))
+                                            sz='1',posSide='long', tpTriggerPx=str(float(lastprice)*1.003), tpOrdPx=str(float(lastprice)*1.003))
         #Datainfo.saveinfo(str(datetime.now())+'设置止盈完毕。。。'+str(float(lastprice)+50))
 
 
-        sendtext = '买入'+symbol.upper()+'-USD-SWAP -->> 10笔，价格是'+str(lastprice)+'，设置止盈完毕。。。'+str(float(lastprice)+200)
-        Datainfo.save_finalinfo('买入价格是--》》'+str(lastprice)+'，设置止盈完毕。。。'+str(float(lastprice)+200))
+        sendtext = '买入'+symbol.upper()+'-USD-SWAP -->> 1笔，价格是'+str(lastprice)+'，设置止盈完毕。。。'+str(float(lastprice)*1.003)
+        Datainfo.save_finalinfo('买入价格是--》》'+str(lastprice)+'，设置止盈完毕。。。'+str(float(lastprice)*1.003))
         SendDingding.sender(sendtext)
 
 
@@ -709,7 +660,7 @@ class Datainfo:
             time.sleep(45)
  
 
-            symbollist = ['btc']
+            symbollist = ['doge']
 
             for symbol in symbollist:
 
@@ -778,7 +729,7 @@ if __name__ == '__main__':
     paths.append(f'./datas/log/')
 
 
-    symbollist = ['btc']
+    symbollist = ['doge']
     #将txt文件的所有内容读入到字符串str中
 
     for symbol in symbollist:
