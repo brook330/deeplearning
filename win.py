@@ -69,7 +69,7 @@ class Datainfo:
             
             
                 
-
+            time.sleep(int(minute)/10)
 
             #===获取close数据
 
@@ -127,43 +127,25 @@ class Datainfo:
 
             Datainfo.getfulldata(dw,symbol)
 
-            learning = Datainfo.getnextdata(dw,symbol)
 
 
             #===判断是否买入或者卖出
         
             #df = pd.read_csv(f'./datas/okex/'+symbol+'/old_'+symbol+'.csv')
 
-            if(dw['vol'].values[-1] and dw['p'].values[-1] and dw['vol'].values[-2] and dw['p'].values[-2] and learning):
-                X1 = dw['close'].values[-1]/dw['vol'].values[-1]*dw['p'].values[-1]/dw['MA'].values[-1]*dw['obv'].values[-1]/dw['maobv'].values[-1]*dw['TRIX'].values[-1]*dw['MATRIX'].values[-1]*dw['close5'].values[-1]/dw['close135'].values[-1]*dw['macd'].values[-1]
-                X2 = dw['close'].values[-2]/dw['vol'].values[-2]*dw['p'].values[-2]/dw['MA'].values[-2]*dw['obv'].values[-2]/dw['maobv'].values[-2]*dw['TRIX'].values[-2]*dw['MATRIX'].values[-2]*dw['close5'].values[-2]/dw['close135'].values[-2]*dw['macd'].values[-2]
+            bias=[]
+            for i in range(len(dw['close'].values)):
+                if(i<=(len(dw['close'].values)+34)):
+                    bias.append((dw['close'].values[i]-dw['close5'].values[i])/dw['close5'].values[i])
+            VAR1 = ta.EMA(np.array(bias), timeperiod=60)
+            VAR2 = ta.EMA(np.array(VAR1), timeperiod=60)
 
-                Y1 = dw['close'].values[-1]*float(dw['MATRIX'].values[-1])*float(dw['TRIX'].values[-1])
-                Y2 = dw['close'].values[-2]*float(dw['MATRIX'].values[-2])*float(dw['TRIX'].values[-2])
+            KONGPAN1= (VAR2[-1]-VAR2[-2])/VAR2[-2]
+            KONGPAN2= (VAR2[-2]-VAR2[-3])/VAR2[-3]
+            if(KONGPAN1>0 and KONGPAN1>KONGPAN2 and KONGPAN2<=0):
 
-                maxvalue = dw.iloc[-50:][(dw['macd'] == dw['macd'][-50:].max())]['close']
-                minvalue = dw.iloc[-50:][(dw['macd'] == dw['macd'][-50:].min())]['close']
-                value = maxvalue.values - minvalue.values
-                value_618 = maxvalue.values - value * 0.618
-                value_192 = maxvalue.values - value * 0.192
-                VAR1 = ta.EMA(np.array(ta.EMA(np.array(dw['macd'].values), timeperiod=9)), timeperiod=9)
-                kongpan = (VAR1[1:]-VAR1[:-1])/VAR1[:-1]*1000
-                ref_kongpan = (VAR1[2:]-VAR1[:-2])/VAR1[:-2]*1000
                 api_key, secret_key, passphrase, flag = Datainfo.get_userinfo()
-
-
-                if(not(X1 >5 and X2 < -3) and X1 >0 and X2 <0 and not(Y1 >0 and Y2 < 0) and dw['macd'].values[-1] > dw['macd'].values[-2] ):
-                    Datainfo.orderbuy(api_key, secret_key, passphrase, flag,symbol)
-                elif(dw['close'].values[-1] > value_618 and dw['macd'].values[-1]>0 and dw['macd'].values[-2]<0  and dw['macd'].values[-1] > dw['macd'].values[-2] ):
-                    Datainfo.orderbuy(api_key, secret_key, passphrase, flag,symbol)
-                elif(dw['macd'].values[-2] == dw['macd'][-40:].min() and dw['macd'].values[-2] < 0 and dw['macd'].values[-2] < dw['macd'].values[-1]):
-                    Datainfo.orderbuy(api_key, secret_key, passphrase, flag,symbol)
-                elif(dw['macd'].values[-1] > dw['macd'].values[-2] +5 and  kongpan[-1:]>ref_kongpan[-1:] and kongpan[-1:]<50 and kongpan[-1:]>0 and (dw['macd'].values[-1]>dw['macd'].values[-2] or dw['macd'].values[-2]>dw['macd'].values[-3])):
-                    Datainfo.orderbuy(api_key, secret_key, passphrase, flag,symbol)
-                elif(dw['macd'].values[-1] > dw['macd'].values[-2] +5 and  dw['close'].values[-1] > value_618 and dw['close'].values[-1] < value_192  and dw['macd'].values[-1] > dw['macd'].values[-2] and dw['volume'].values[-1] > dw['volume'].values[-2]*1.01):
-                    Datainfo.orderbuy(api_key, secret_key, passphrase, flag,symbol)
-                elif(dw['macd'].values[-1] > dw['macd'].values[-2] +5 and  dw['macd'].values[-2] == dw['macd'][-40:].min() and dw['macd'].values[-2] < 0 and dw['macd'].values[-2] < dw['macd'].values[-1]):
-                    Datainfo.orderbuy(api_key, secret_key, passphrase, flag,symbol)
+                Datainfo.orderbuy(api_key, secret_key, passphrase, flag,symbol)
         
 
                        
@@ -240,24 +222,24 @@ class Datainfo:
 
 
     
-    #设置自动下单
     def orderbuy(api_key, secret_key, passphrase, flag,symbol):
-
-
+        sr='1'
+        if(symbol == 'doge'):
+            sr='40'
         # account api
         accountAPI = Account.AccountAPI(api_key, secret_key, passphrase, False, flag)
         
         # 设置持仓模式  Set Position mode
         result = accountAPI.get_position_mode('long_short_mode')
         # 设置杠杆倍数  Set Leverage
-        result = accountAPI.set_leverage(instId=symbol.upper()+'-USD-SWAP', lever='50', mgnMode='cross')
+        result = accountAPI.set_leverage(instId=symbol, lever='75', mgnMode='cross')
         #Datainfo.saveinfo('设置100倍保证金杠杆完毕。。。')
         # trade api
         tradeAPI = Trade.TradeAPI(api_key, secret_key, passphrase, False, flag)
         # 批量下单  Place Multiple Orders
         # 批量下单  Place Multiple Orders
         result = tradeAPI.place_multiple_orders([
-             {'instId': symbol, 'tdMode': 'cross', 'side': 'buy', 'ordType': 'market', 'sz': '1',
+             {'instId': symbol, 'tdMode': 'cross', 'side': 'buy', 'ordType': 'market', 'sz': sr,
               'posSide': 'long',
               'clOrdId': 'a12344', 'tag': 'test1210'},
     
@@ -277,10 +259,12 @@ class Datainfo:
 
         # 策略委托下单  Place Algo Order
         result = tradeAPI.place_algo_order(symbol, 'cross', 'sell', ordType='conditional',
-                                            sz='1',posSide='long', tpTriggerPx=str(float(lastprice)*1.05), tpOrdPx=str(float(lastprice)*1.05))
+                                            sz= sr,posSide='long', tpTriggerPx=str(float(lastprice)*1.01), tpOrdPx=str(float(lastprice)*1.005))
+        #Datainfo.saveinfo(str(datetime.now())+'设置止盈完毕。。。'+str(float(lastprice)+50))
 
-        sendtext = '买入'+symbol+' -->> 1笔，价格是'+str(lastprice)+'，设置止盈完毕。。。'+str(float(lastprice)*1.05)
-        Datainfo.save_finalinfo(sendtext)
+
+        sendtext = '买入'+symbol+' -->> '+sr+'笔，价格是'+str(lastprice)+'，设置止盈完毕。。。'+str(float(lastprice)*1.005)
+        Datainfo.save_finalinfo('买入价格是--》》'+str(lastprice)+'，设置止盈完毕。。。'+str(float(lastprice)*1.005))
         SendDingding.sender(sendtext)
 
 
@@ -394,15 +378,17 @@ class Datainfo:
 
             #声明6进程保存数据
             p1 = multiprocessing.Process(target = sch.showwindows)
-            p2 = multiprocessing.Process(target = sch.okex240M_buy)
+            p2 = multiprocessing.Process(target = sch.okex15M_buy)
             p3 = multiprocessing.Process(target = sch.okex60M_buy)
+            p4 = multiprocessing.Process(target = sch.okex5M_buy)
 
             #6个进程开始运行
-  
+            p4.start()
             p3.start()
             p2.start()
             p1.start()
 
+            p4.join()
             p3.join()
             p2.join()
             p1.join()
@@ -547,14 +533,14 @@ class Datainfo:
         def okex5M_buy(self):
 
 
-            self.getdatainfo('5')
-            #scheduler = BlockingScheduler()
-            #scheduler.add_job((self.getdatainfo), 'cron', args = ['5'], minute='*/5')
-            #print(scheduler.get_jobs())
-            #try:
-                #scheduler.start()
-            #except KeyboardInterrupt:
-                #scheduler.shutdown()
+
+            scheduler = BlockingScheduler()
+            scheduler.add_job((self.getdatainfo), 'cron', args = ['5'], minute='*/5')
+            print(scheduler.get_jobs())
+            try:
+                scheduler.start()
+            except KeyboardInterrupt:
+                scheduler.shutdown()
 
         def okex15M_buy(self):
 
