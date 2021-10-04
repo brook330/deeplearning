@@ -146,7 +146,14 @@ class Datainfo:
 
                 api_key, secret_key, passphrase, flag = Datainfo.get_userinfo()
                 Datainfo.orderbuy(api_key, secret_key, passphrase, flag,symbol)
-        
+                if(symbol == 'DOGE-USD-SWAP'):
+                    Datainfo.saveinfo('-->>>买入-->>>'+symbol+'--->>>买入价格--->>>'+Datainfo.getlastprice(api_key, secret_key, passphrase, flag,symbol))
+                elif(symbol == 'BTC-USD-SWAP'):
+                    Datainfo.saveinfo('-->>>买入-->>>'+symbol+'--->>>买入价格--->>>'+Datainfo.getlastprice(api_key, secret_key, passphrase, flag,symbol))
+                elif(symbol == 'DOT-USD-SWAP'):
+                    Datainfo.saveinfo('-->>>买入-->>>'+symbol+'--->>>买入价格--->>>'+Datainfo.getlastprice(api_key, secret_key, passphrase, flag,symbol))
+                elif(symbol == 'YFII-USD-SWAP'):
+                    Datainfo.saveinfo('-->>>买入-->>>'+symbol+'--->>>买入价格--->>>'+Datainfo.getlastprice(api_key, secret_key, passphrase, flag,symbol))
 
                        
 
@@ -223,9 +230,11 @@ class Datainfo:
 
     
     def orderbuy(api_key, secret_key, passphrase, flag,symbol):
-        sr='1'
-        if(symbol == 'doge'):
+        sr='10'
+        if(symbol == 'DOGE-USD-SWAP'):
             sr='40'
+        elif(symbol == 'BTC-USD-SWAP'):
+            sr='3'
         # account api
         accountAPI = Account.AccountAPI(api_key, secret_key, passphrase, False, flag)
         
@@ -259,12 +268,12 @@ class Datainfo:
 
         # 策略委托下单  Place Algo Order
         result = tradeAPI.place_algo_order(symbol, 'cross', 'sell', ordType='conditional',
-                                            sz= sr,posSide='long', tpTriggerPx=str(float(lastprice)*1.01), tpOrdPx=str(float(lastprice)*1.005))
+                                            sz= sr,posSide='long', tpTriggerPx=str(float(lastprice)*1.003), tpOrdPx=str(float(lastprice)*1.003))
         #Datainfo.saveinfo(str(datetime.now())+'设置止盈完毕。。。'+str(float(lastprice)+50))
 
 
-        sendtext = '买入'+symbol+' -->> '+sr+'笔，价格是'+str(lastprice)+'，设置止盈完毕。。。'+str(float(lastprice)*1.005)
-        Datainfo.save_finalinfo('买入价格是--》》'+str(lastprice)+'，设置止盈完毕。。。'+str(float(lastprice)*1.005))
+        sendtext = '买入'+symbol+' -->> '+sr+'笔，价格是'+str(lastprice)+'，设置止盈完毕。。。'+str(float(lastprice)*1.003)
+        Datainfo.save_finalinfo('买入价格是--》》'+str(lastprice)+'，设置止盈完毕。。。'+str(float(lastprice)*1.003))
         SendDingding.sender(sendtext)
 
 
