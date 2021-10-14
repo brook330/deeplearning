@@ -55,82 +55,91 @@ class Datainfo:
 
     def eth_isbuy(minute,symbol):
 
-        
+        api_key, secret_key, passphrase, flag = Datainfo.get_userinfo()
+        # trade api
+        tradeAPI = Trade.TradeAPI(api_key, secret_key, passphrase, False, flag)
+        # 获取未完成策略委托单列表  Get Algo Order List
+        result = tradeAPI.order_algos_list('conditional', instType='SWAP')
+        print(len(result['data']))
+        if(len(result['data'])>5):
+            return False
+        else:
 
-        t = time.time()
 
-        #print (t)                       #原始时间数据
-        #print (int(t))                  #秒级时间戳
-        #print (int(round(t * 1000)))    #毫秒级时间戳
-        #print (int(round(t * 1000000))) #微秒级时间戳
-        tt = str((int(t * 1000)))
-        ttt = str((int(round(t * 1000000))))
+            t = time.time()
+
+            #print (t)                       #原始时间数据
+            #print (int(t))                  #秒级时间戳
+            #print (int(round(t * 1000)))    #毫秒级时间戳
+            #print (int(round(t * 1000000))) #微秒级时间戳
+            tt = str((int(t * 1000)))
+            ttt = str((int(round(t * 1000000))))
             
             
-                
-        time.sleep(int(minute)/10)
+               
 
-        #===获取close数据
+            #===获取close数据
 
         
 
 
-        headers = {
-        'authority': 'www.okex.com',
-        'sec-ch-ua': '^\\^',
-        'timeout': '10000',
-        'x-cdn': 'https://static.okex.com',
-        'devid': '7f1dea77-90cd-4746-a13f-a98bac4a333b',
-        'accept-language': 'zh-CN',
-        'sec-ch-ua-mobile': '?0',
-        'user-agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.77 Safari/537.36',
-        'accept': 'application/json',
-        'x-utc': '8',
-        'app-type': 'web',
-        'sec-fetch-site': 'same-origin',
-        'sec-fetch-mode': 'cors',
-        'sec-fetch-dest': 'empty',
-        'referer': 'https://www.okex.com/markets/swap-info/'+symbol.lower()[:-5],
-        'cookie': 'locale=zh_CN; _gcl_au=1.1.1849415495.'+str(tt)+'; _ga=GA1.2.1506507962.'+str(tt)+'; _gid=GA1.2.256681666.'+str(tt)+'; first_ref=https^%^3A^%^2F^%^2Fwww.okex.com^%^2Fcaptcha^%^3Fto^%^3DaHR0cHM6Ly93d3cub2tleC5jb20vbWFya2V0cy9zd2FwLWRhdGEvZXRoLXVzZA^%^3D^%^3D; _gat_UA-35324627-3=1; amp_56bf9d=gqC_GMDGl4q5Tk-BJhT-oP...1f711b989.1f711fv58.0.2.2',
-        }
+            headers = {
+            'authority': 'www.okex.com',
+            'sec-ch-ua': '^\\^',
+            'timeout': '10000',
+            'x-cdn': 'https://static.okex.com',
+            'devid': '7f1dea77-90cd-4746-a13f-a98bac4a333b',
+            'accept-language': 'zh-CN',
+            'sec-ch-ua-mobile': '?0',
+            'user-agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.77 Safari/537.36',
+            'accept': 'application/json',
+            'x-utc': '8',
+            'app-type': 'web',
+            'sec-fetch-site': 'same-origin',
+            'sec-fetch-mode': 'cors',
+            'sec-fetch-dest': 'empty',
+            'referer': 'https://www.okex.com/markets/swap-info/'+symbol.lower()[:-5],
+            'cookie': 'locale=zh_CN; _gcl_au=1.1.1849415495.'+str(tt)+'; _ga=GA1.2.1506507962.'+str(tt)+'; _gid=GA1.2.256681666.'+str(tt)+'; first_ref=https^%^3A^%^2F^%^2Fwww.okex.com^%^2Fcaptcha^%^3Fto^%^3DaHR0cHM6Ly93d3cub2tleC5jb20vbWFya2V0cy9zd2FwLWRhdGEvZXRoLXVzZA^%^3D^%^3D; _gat_UA-35324627-3=1; amp_56bf9d=gqC_GMDGl4q5Tk-BJhT-oP...1f711b989.1f711fv58.0.2.2',
+            }
 
-        params = (
-        ('granularity', str(int(minute)*60)),
-        ('size', '1000'),
-        ('t', str(ttt)),
-        )
-        response = r.get('https://www.okex.com/v2/perpetual/pc/public/instruments/'+symbol+'/candles', headers=headers, params=params)
+            params = (
+            ('granularity', str(int(minute)*60)),
+            ('size', '1000'),
+            ('t', str(ttt)),
+            )
+            response = r.get('https://www.okex.com/v2/perpetual/pc/public/instruments/'+symbol+'/candles', headers=headers, params=params)
 
-        if response.cookies.get_dict(): #保持cookie有效 
-                s=r.session()
-                c = r.cookies.RequestsCookieJar()#定义一个cookie对象
-                c.set('cookie-name', 'cookie-value')#增加cookie的值
-                s.cookies.update(c)#更新s的cookie
-                s.get(url = 'https://www.okex.com/v2/perpetual/pc/public/instruments/'+symbol+'/candles?granularity=900&size=1000&t='+str(ttt))
-        dw = pd.DataFrame(eval(json.dumps(response.json()))['data'])
-        #print(df)
-        dw.columns = ['timestamps','open','high','low','close','vol','p']
-        datelist = []
-        for timestamp in dw['timestamps']:
-            datelist.append(timestamp.split('.000Z')[0].replace('T',' '))
-        dw['timestamps'] = datelist
-        dw['timestamps'] = pd.to_datetime(dw['timestamps'])+pd.to_timedelta('8 hours')
-        #df['timestamps'] = df['timestamps'].apply(lambda x:time.mktime(time.strptime(str(x),'%Y-%m-%d %H:%M:%S')))
-        #print(dw)
-        dw['vol'] = list(map(float, dw['vol'].values))
-        dw['close'] = list(map(float, dw['close'].values))
+            if response.cookies.get_dict(): #保持cookie有效 
+                    s=r.session()
+                    c = r.cookies.RequestsCookieJar()#定义一个cookie对象
+                    c.set('cookie-name', 'cookie-value')#增加cookie的值
+                    s.cookies.update(c)#更新s的cookie
+                    s.get(url = 'https://www.okex.com/v2/perpetual/pc/public/instruments/'+symbol+'/candles?granularity=900&size=1000&t='+str(ttt))
+            dw = pd.DataFrame(eval(json.dumps(response.json()))['data'])
+            #print(df)
+            dw.columns = ['timestamps','open','high','low','close','vol','p']
+            datelist = []
+            for timestamp in dw['timestamps']:
+                datelist.append(timestamp.split('.000Z')[0].replace('T',' '))
+            dw['timestamps'] = datelist
+            dw['timestamps'] = pd.to_datetime(dw['timestamps'])+pd.to_timedelta('8 hours')
+            #df['timestamps'] = df['timestamps'].apply(lambda x:time.mktime(time.strptime(str(x),'%Y-%m-%d %H:%M:%S')))
+            #print(dw)
+            dw['vol'] = list(map(float, dw['vol'].values))
+            dw['close'] = list(map(float, dw['close'].values))
         
-        dw.to_csv(f'./datas/okex/'+symbol+'/close.csv',index = False)
+            dw.to_csv(f'./datas/okex/'+symbol+'/'+minute+'_close.csv',index = False)
        
-        dw = pd.read_csv(f'./datas/okex/'+symbol+'/close.csv')
+            dw = pd.read_csv(f'./datas/okex/'+symbol+'/'+minute+'_close.csv')
 
-        Datainfo.getfulldata(dw,symbol)
+            Datainfo.getfulldata(dw,symbol,minute)
 
                        
 
-        #===判断是否买入或者卖出
-                        
-        if(dw['macd'].values[-1]>dw['macd'].values[-2] ):
+            #===判断是否买入或者卖出
+     
+            
+
             bias=[]
             for i in range(len(dw['close'].values)):
                 if(i<=(len(dw['close'].values)+34)):
@@ -141,23 +150,23 @@ class Datainfo:
             KONGPAN1= (VAR2[-1]-VAR2[-2])/VAR2[-2]
             KONGPAN2= (VAR2[-2]-VAR2[-3])/VAR2[-3]
             if(KONGPAN1>0 and KONGPAN1>KONGPAN2 and KONGPAN2<=0):
-                api_key, secret_key, passphrase, flag = Datainfo.get_userinfo()
-                Datainfo.orderbuy(api_key, secret_key, passphrase, flag,symbol)
-                Datainfo.saveinfo('-->>>买入-->>>'+symbol+'--->>>买入价格--->>>'+Datainfo.getlastprice(api_key, secret_key, passphrase, flag,symbol)+'--->>>加油！！！--->>>')
-        elif(int(minute)>3 and Datainfo.getnextdata(dw,symbol)):
-            bias=[]
-            for i in range(len(dw['close'].values)):
-                if(i<=(len(dw['close'].values)+34)):
-                    bias.append((dw['close'].values[i]-dw['close5'].values[i])/dw['close5'].values[i])
-            VAR1 = ta.EMA(np.array(bias), timeperiod=60)
-            VAR2 = ta.EMA(np.array(VAR1), timeperiod=60)
 
-            KONGPAN1= (VAR2[-1]-VAR2[-2])/VAR2[-2]
-            KONGPAN2= (VAR2[-2]-VAR2[-3])/VAR2[-3]
-            if(KONGPAN1>0 and KONGPAN1>KONGPAN2 and KONGPAN2<=0):
-                api_key, secret_key, passphrase, flag = Datainfo.get_userinfo()
-                Datainfo.orderbuy(api_key, secret_key, passphrase, flag,symbol)
-                Datainfo.saveinfo('-->>>买入-->>>'+symbol+'--->>>买入价格--->>>'+Datainfo.getlastprice(api_key, secret_key, passphrase, flag,symbol)+'--->>>加油！！！--->>>')                   
+                X1 = dw['close'].values[-1]/dw['vol'].values[-1]*dw['p'].values[-1]/dw['MA'].values[-1]*dw['obv'].values[-1]/dw['maobv'].values[-1]*dw['TRIX'].values[-1]*dw['MATRIX'].values[-1]*dw['close5'].values[-1]/dw['close135'].values[-1]*dw['macd'].values[-1]
+                X2 = dw['close'].values[-2]/dw['vol'].values[-2]*dw['p'].values[-2]/dw['MA'].values[-2]*dw['obv'].values[-2]/dw['maobv'].values[-2]*dw['TRIX'].values[-2]*dw['MATRIX'].values[-2]*dw['close5'].values[-2]/dw['close135'].values[-2]*dw['macd'].values[-2]
+
+                Y1 = dw['close'].values[-1]*float(dw['MATRIX'].values[-1])*float(dw['TRIX'].values[-1])
+                Y2 = dw['close'].values[-2]*float(dw['MATRIX'].values[-2])*float(dw['TRIX'].values[-2])
+            
+
+                if(not(X1 >5 and X2 < -3) and X1 >0 and X2 <0 and not(Y1 >0 and Y2 < 0)):
+                    Datainfo.orderbuy(api_key, secret_key, passphrase, flag,symbol,minute)
+                    Datainfo.saveinfo('-->>>买入-->>>'+symbol+'--->>>买入价格--->>>'+Datainfo.getlastprice(api_key, secret_key, passphrase, flag,symbol)+'--->>>加油！！！--->>>')
+                else:
+                    print(str(time.strftime("%Y-%m-%d %H:%M:%S", time.localtime()))+'不买入')
+            
+                
+                
+        
 
                
             
@@ -166,7 +175,7 @@ class Datainfo:
 
 
 
-    def getfulldata(df,symbol):
+    def getfulldata(df,symbol,minute):
 
 
         #获取参数历史数据
@@ -179,23 +188,23 @@ class Datainfo:
         # 调用talib计算5\35\135日指数移动平均线的值
         
 
-        df['close5'] = ta.EMA(np.array(df['close'].values), timeperiod=5)
-        df['close35'] = ta.EMA(np.array(df['close'].values), timeperiod=35)
-        df['close135'] = ta.EMA(np.array(df['close'].values), timeperiod=135)
+        df['close5'] = ta.EMA(np.array(df['close'].values.astype('float')), timeperiod=5)
+        df['close35'] = ta.EMA(np.array(df['close'].values.astype('float')), timeperiod=35)
+        df['close135'] = ta.EMA(np.array(df['close'].values.astype('float')), timeperiod=135)
 
-        df["MACD_macd"],df["MACD_macdsignal"],df["MACD_macdhist"] = ta.MACD(df['close'].values, fastperiod=12, slowperiod=26, signalperiod=60)
+        df["MACD_macd"],df["MACD_macdsignal"],df["MACD_macdhist"] = ta.MACD(df['close'].values.astype('float'), fastperiod=12, slowperiod=26, signalperiod=60)
         df['macd'] = 2*(df["MACD_macd"]-df["MACD_macdsignal"])
 
-        df["MA"] = ta.MA(df['close'].values, timeperiod=30, matype=0)
+        df["MA"] = ta.MA(df['close'].values.astype('float'), timeperiod=30, matype=0)
         # EMA和MACD
-        df['obv'] = ta.OBV(df['close'].values,df['vol'].values)
+        df['obv'] = ta.OBV(df['close'].values.astype('float'),df['vol'].values.astype('float'))
         df['maobv'] = ta.MA(df['obv'].values, timeperiod=30, matype=0)
 
-        df['TRIX'] = ta.TRIX(np.array(df['close'].values), timeperiod=14)
+        df['TRIX'] = ta.TRIX(np.array(df['close'].values.astype('float')), timeperiod=14)
         df['MATRIX'] = ta.MA(df['TRIX'].values, timeperiod=30, matype=0)
 
         
-        df.to_csv(f'./datas/okex/'+symbol+'/close.csv',index = False)
+        df.to_csv(f'./datas/okex/'+symbol+'/'+minute+'_close.csv',index = False)
 
        
 
@@ -236,24 +245,17 @@ class Datainfo:
 
 
     
-    def orderbuy(api_key, secret_key, passphrase, flag,symbol):
+    def orderbuy(api_key, secret_key, passphrase, flag,symbol,minute):
         
 
-        sr='40'
+        sr='1'
 
         # trade api
         tradeAPI = Trade.TradeAPI(api_key, secret_key, passphrase, False, flag)
         # 获取未完成策略委托单列表  Get Algo Order List
         result = tradeAPI.order_algos_list('conditional', instType='SWAP')
 
-        if(len(result['data'])>5 and len(result['data'])<10):
-            sr='10'
-        elif(len(result['data'])>10 and len(result['data'])<20):
-            sr='5'
-        elif(len(result['data'])>20 and len(result['data'])<50):
-            sr='2'
-        else:
-            sr='1'
+        
 
         # account api
         accountAPI = Account.AccountAPI(api_key, secret_key, passphrase, False, flag)
@@ -261,7 +263,7 @@ class Datainfo:
         # 设置持仓模式  Set Position mode
         result = accountAPI.get_position_mode('long_short_mode')
         # 设置杠杆倍数  Set Leverage
-        result = accountAPI.set_leverage(instId=symbol, lever='75', mgnMode='cross')
+        result = accountAPI.set_leverage(instId=symbol, lever='125', mgnMode='cross')
         #Datainfo.saveinfo('设置100倍保证金杠杆完毕。。。')
         # trade api
         tradeAPI = Trade.TradeAPI(api_key, secret_key, passphrase, False, flag)
@@ -289,12 +291,12 @@ class Datainfo:
 
         # 策略委托下单  Place Algo Order
         result = tradeAPI.place_algo_order(symbol, 'cross', 'sell', ordType='conditional',
-                                            sz= sr,posSide='long', tpTriggerPx=str(float(lastprice)*1.005), tpOrdPx=str(float(lastprice)*1.005))
+                                            sz= sr,posSide='long', tpTriggerPx=str(float(lastprice)*1.001), tpOrdPx=str(float(lastprice)*1.001))
         #Datainfo.saveinfo(str(datetime.now())+'设置止盈完毕。。。'+str(float(lastprice)+50))
 
 
-        sendtext = '买入'+symbol+' -->> '+sr+'笔，价格是'+str(lastprice)+'，设置止盈完毕。。。'+str(float(lastprice)*1.005)
-        Datainfo.save_finalinfo('买入价格是--》》'+str(lastprice)+'，设置止盈完毕。。。'+str(float(lastprice)*1.005))
+        sendtext = '买入-->>'+minute+' 分钟-->> '+symbol+' -->> '+sr+'笔，价格是'+str(lastprice)+'，设置止盈完毕。。。'+str(float(lastprice)*1.001)
+        Datainfo.save_finalinfo(sendtext)
         SendDingding.sender(sendtext)
 
 
@@ -647,7 +649,7 @@ class Datainfo:
         def getdatainfo(self,minute):
 
             
-            symbol = 'DOGE-USD-SWAP'
+            symbol = 'BTC-USD-SWAP'
             Datainfo.eth_isbuy(minute,symbol)
 
 
@@ -706,7 +708,7 @@ if __name__ == '__main__':
     paths.append(f'./datas/okex/')
     paths.append(f'./datas/log/')
 
-    paths.append(f'./datas/okex/'+'DOGE-USD-SWAP')
+    paths.append(f'./datas/okex/'+'BTC-USD-SWAP')
     
 
     for p in paths :
