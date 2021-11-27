@@ -20,7 +20,7 @@ import time
 import shutil
 from pathlib import Path
 from PyQt5 import QtCore, QtGui, QtWidgets
-import sys,io
+import sys,io,os
 from PyQt5.QtWidgets import *
 from PyQt5.QtCore import *
 from PyQt5.QtGui import *
@@ -61,7 +61,7 @@ class Datainfo:
         # 获取未完成策略委托单列表  Get Algo Order List
         result = tradeAPI.order_algos_list('conditional', instType='SWAP')
         print(len(result['data']))
-        if(len(result['data'])>5):
+        if(len(result['data'])>60):
             return False
         else:
 
@@ -76,7 +76,8 @@ class Datainfo:
             ttt = str((int(round(t * 1000000))))
             
             
-               
+                
+            time.sleep(int(minute)/10)
 
             #===获取close数据
 
@@ -128,17 +129,11 @@ class Datainfo:
             dw['vol'] = list(map(float, dw['vol'].values))
             dw['close'] = list(map(float, dw['close'].values))
         
-            dw.to_csv(f'./datas/okex/'+symbol+'/'+minute+'_close.csv',index = False)
+            dw.to_csv(f'./datas/okex/'+symbol+'/'+minute+'close.csv',index = False)
        
-            dw = pd.read_csv(f'./datas/okex/'+symbol+'/'+minute+'_close.csv')
+            dw = pd.read_csv(f'./datas/okex/'+symbol+'/'+minute+'close.csv')
 
             Datainfo.getfulldata(dw,symbol,minute)
-
-                       
-
-            #===判断是否买入或者卖出
-     
-            
 
             bias=[]
             for i in range(len(dw['close'].values)):
@@ -149,23 +144,29 @@ class Datainfo:
 
             KONGPAN1= (VAR2[-1]-VAR2[-2])/VAR2[-2]
             KONGPAN2= (VAR2[-2]-VAR2[-3])/VAR2[-3]
-            if(KONGPAN1>0 and KONGPAN1>KONGPAN2 and KONGPAN2<=0):
-
-                X1 = dw['close'].values[-1]/dw['vol'].values[-1]*dw['p'].values[-1]/dw['MA'].values[-1]*dw['obv'].values[-1]/dw['maobv'].values[-1]*dw['TRIX'].values[-1]*dw['MATRIX'].values[-1]*dw['close5'].values[-1]/dw['close135'].values[-1]*dw['macd'].values[-1]
-                X2 = dw['close'].values[-2]/dw['vol'].values[-2]*dw['p'].values[-2]/dw['MA'].values[-2]*dw['obv'].values[-2]/dw['maobv'].values[-2]*dw['TRIX'].values[-2]*dw['MATRIX'].values[-2]*dw['close5'].values[-2]/dw['close135'].values[-2]*dw['macd'].values[-2]
-
-                Y1 = dw['close'].values[-1]*float(dw['MATRIX'].values[-1])*float(dw['TRIX'].values[-1])
-                Y2 = dw['close'].values[-2]*float(dw['MATRIX'].values[-2])*float(dw['TRIX'].values[-2])
             
+            X1 = dw['close'].values[-1]/dw['vol'].values[-1]*dw['p'].values[-1]/dw['MA'].values[-1]*dw['obv'].values[-1]/dw['maobv'].values[-1]*dw['TRIX'].values[-1]*dw['MATRIX'].values[-1]*dw['close5'].values[-1]/dw['close135'].values[-1]*dw['macd'].values[-1]
+            X2 = dw['close'].values[-2]/dw['vol'].values[-2]*dw['p'].values[-2]/dw['MA'].values[-2]*dw['obv'].values[-2]/dw['maobv'].values[-2]*dw['TRIX'].values[-2]*dw['MATRIX'].values[-2]*dw['close5'].values[-2]/dw['close135'].values[-2]*dw['macd'].values[-2]
 
-                if(not(X1 >5 and X2 < -3) and X1 >0 and X2 <0 and not(Y1 >0 and Y2 < 0)):
-                    Datainfo.orderbuy(api_key, secret_key, passphrase, flag,symbol,minute)
+            Y1 = dw['close'].values[-1]*float(dw['MATRIX'].values[-1])*float(dw['TRIX'].values[-1])
+            Y2 = dw['close'].values[-2]*float(dw['MATRIX'].values[-2])*float(dw['TRIX'].values[-2])
+
+            #Datainfo.saveinfo('时间-->>'+str(dw['timestamps'].values[-1])+'-->>分钟-->>'+minute+'--->>>close--->>>'+str(dw['close'].values[-1])+'-->>>KONGPAN1-->>>'+str(KONGPAN1)+'--->>>KONGPAN2--->>>'+str(KONGPAN2)+'--->>>X1--->>>'+str(X1)+'--->>>X2--->>>'+str(X2)+'--->>>Y1--->>>'+str(Y1)+'--->>>Y2--->>>'+str(Y2)+'--->>>macd1--->>>'+str(dw['macd'].values[-1])+'--->>>macd2--->>>'+str(dw['macd'].values[-2]))
+            Datainfo.saveinfo(str(dw['close'].values[-1])+','+str(KONGPAN1)+','+str(KONGPAN2)+','+str(X1)+','+str(X2)+','+str(Y1)+','+str(Y2)+','+str(dw['macd'].values[-1])+','+str(dw['macd'].values[-2]))
+            res = pd.read_csv(f'./datas/okex/BTC-USD-SWAP/'+minute+'minute/'+minute+'minute.csv')
+            #'timestamps','close', 'KONGPAN1', 'KONGPAN2','X1', 'X2', 'Y1' ,'Y2', 'macd1','macd2'
+            res = res.append([{'timestamps':dw['timestamps'].values[-1],'close':dw['close'].values[-1],'KONGPAN1':KONGPAN1,'KONGPAN2':KONGPAN2,'X1':X1,'X2':X2,'Y1':Y1,'Y2':Y2,'macd1':dw['macd'].values[-1],'macd2':dw['macd'].values[-2]}], ignore_index=True)
+            res.to_csv(f'./datas/okex/BTC-USD-SWAP/'+minute+'minute/'+minute+'minute.csv',index=0)
+            #===判断是否买入或者卖出
+            if(KONGPAN1>0 and X1>0 and X2>0 and Y1>0 and Y2>0):           
+                
+                        
+                if(KONGPAN1>KONGPAN2 and  X1>X2 and Y1>Y2 and dw['macd'].values[-1] > dw['macd'].values[-2]  and Datainfo.getnextdata(dw,symbol)):            
+            
+            
+                
+                    Datainfo.orderbuy(api_key, secret_key, passphrase, flag,symbol)
                     Datainfo.saveinfo('-->>>买入-->>>'+symbol+'--->>>买入价格--->>>'+Datainfo.getlastprice(api_key, secret_key, passphrase, flag,symbol)+'--->>>加油！！！--->>>')
-                else:
-                    print(str(time.strftime("%Y-%m-%d %H:%M:%S", time.localtime()))+'不买入')
-            
-                
-                
         
 
                
@@ -188,23 +189,23 @@ class Datainfo:
         # 调用talib计算5\35\135日指数移动平均线的值
         
 
-        df['close5'] = ta.EMA(np.array(df['close'].values.astype('float')), timeperiod=5)
-        df['close35'] = ta.EMA(np.array(df['close'].values.astype('float')), timeperiod=35)
-        df['close135'] = ta.EMA(np.array(df['close'].values.astype('float')), timeperiod=135)
+        df['close5'] = ta.EMA(np.array(df['close'].values), timeperiod=5)
+        df['close35'] = ta.EMA(np.array(df['close'].values), timeperiod=35)
+        df['close135'] = ta.EMA(np.array(df['close'].values), timeperiod=135)
 
-        df["MACD_macd"],df["MACD_macdsignal"],df["MACD_macdhist"] = ta.MACD(df['close'].values.astype('float'), fastperiod=12, slowperiod=26, signalperiod=60)
+        df["MACD_macd"],df["MACD_macdsignal"],df["MACD_macdhist"] = ta.MACD(df['close'].values, fastperiod=12, slowperiod=26, signalperiod=60)
         df['macd'] = 2*(df["MACD_macd"]-df["MACD_macdsignal"])
 
-        df["MA"] = ta.MA(df['close'].values.astype('float'), timeperiod=30, matype=0)
+        df["MA"] = ta.MA(df['close'].values, timeperiod=30, matype=0)
         # EMA和MACD
-        df['obv'] = ta.OBV(df['close'].values.astype('float'),df['vol'].values.astype('float'))
+        df['obv'] = ta.OBV(df['close'].values,df['vol'].values)
         df['maobv'] = ta.MA(df['obv'].values, timeperiod=30, matype=0)
 
-        df['TRIX'] = ta.TRIX(np.array(df['close'].values.astype('float')), timeperiod=14)
+        df['TRIX'] = ta.TRIX(np.array(df['close'].values), timeperiod=14)
         df['MATRIX'] = ta.MA(df['TRIX'].values, timeperiod=30, matype=0)
 
         
-        df.to_csv(f'./datas/okex/'+symbol+'/'+minute+'_close.csv',index = False)
+        df.to_csv(f'./datas/okex/'+symbol+'/'+minute+'close.csv',index = False)
 
        
 
@@ -245,7 +246,7 @@ class Datainfo:
 
 
     
-    def orderbuy(api_key, secret_key, passphrase, flag,symbol,minute):
+    def orderbuy(api_key, secret_key, passphrase, flag,symbol):
         
 
         sr='1'
@@ -263,7 +264,7 @@ class Datainfo:
         # 设置持仓模式  Set Position mode
         result = accountAPI.get_position_mode('long_short_mode')
         # 设置杠杆倍数  Set Leverage
-        result = accountAPI.set_leverage(instId=symbol, lever='125', mgnMode='cross')
+        result = accountAPI.set_leverage(instId=symbol, lever='75', mgnMode='cross')
         #Datainfo.saveinfo('设置100倍保证金杠杆完毕。。。')
         # trade api
         tradeAPI = Trade.TradeAPI(api_key, secret_key, passphrase, False, flag)
@@ -291,12 +292,12 @@ class Datainfo:
 
         # 策略委托下单  Place Algo Order
         result = tradeAPI.place_algo_order(symbol, 'cross', 'sell', ordType='conditional',
-                                            sz= sr,posSide='long', tpTriggerPx=str(float(lastprice)*1.001), tpOrdPx=str(float(lastprice)*1.001))
+                                            sz= sr,posSide='long', tpTriggerPx=str(float(lastprice)*1.003), tpOrdPx=str(float(lastprice)*1.003))
         #Datainfo.saveinfo(str(datetime.now())+'设置止盈完毕。。。'+str(float(lastprice)+50))
 
 
-        sendtext = '买入-->>'+minute+' 分钟-->> '+symbol+' -->> '+sr+'笔，价格是'+str(lastprice)+'，设置止盈完毕。。。'+str(float(lastprice)*1.001)
-        Datainfo.save_finalinfo(sendtext)
+        sendtext = '买入'+symbol+' -->> '+sr+'笔，价格是'+str(lastprice)+'，设置止盈完毕。。。'+str(float(lastprice)*1.003)
+        Datainfo.save_finalinfo('买入价格是--》》'+str(lastprice)+'，设置止盈完毕。。。'+str(float(lastprice)*1.003))
         SendDingding.sender(sendtext)
 
 
@@ -527,14 +528,14 @@ class Datainfo:
           
 
             f_day = open(f'./datas/log/day_buy.txt',"r",encoding='utf-8')   #设置文件对象
-            day_buy = f_day.read()[-1600:]     #将txt文件的所有内容读入到字符串str中
+            day_buy = f_day.read()[-4000:]     #将txt文件的所有内容读入到字符串str中
             f_day.close()   #将文件关闭
             if(day_buy):
                 self.textBrowsertwo.clear()
                 self.textBrowsertwo.append(day_buy)
 
             f_info = open(f'./datas/log/infodata.txt',"r",encoding='utf-8')   #设置文件对象
-            infodata = f_info.read()[-1600:]     #将txt文件的所有内容读入到字符串str中
+            infodata = f_info.read()[-4000:]     #将txt文件的所有内容读入到字符串str中
             f_info.close()   #将文件关闭
             if(infodata):
                 self.textBrowserone.clear()
@@ -727,6 +728,43 @@ if __name__ == '__main__':
     file = open(f'./datas/log/day_buy.txt', 'w',encoding='utf-8').close()
     file = open(f'./datas/log/infodata.txt', 'w',encoding='utf-8').close()
 
+    res = pd.DataFrame(columns=('timestamps','close', 'KONGPAN1', 'KONGPAN2','X1', 'X2', 'Y1' ,'Y2', 'macd1','macd2'))
+    
+    pathlist = []
+    pathlist.append(f'./datas/okex/BTC-USD-SWAP/1minute/1minute.csv')
+    pathlist.append(f'./datas/okex/BTC-USD-SWAP/3minute/3minute.csv')
+    pathlist.append(f'./datas/okex/BTC-USD-SWAP/5minute/5minute.csv')
+    pathlist.append(f'./datas/okex/BTC-USD-SWAP/15minute/15minute.csv')
+    pathlist.append(f'./datas/okex/BTC-USD-SWAP/60minute/60minute.csv')
+    pathlist.append(f'./datas/okex/BTC-USD-SWAP/240minute/240minute.csv')
+
+    count = 0
+    for path in pathlist:
+        
+        minute = 0
+
+        if(count==0):
+            minute = 1
+        elif(count==1):
+            minute = 3
+        elif(count==2):
+            minute = 5
+        elif(count==3):
+            minute = 15
+        elif(count==4):
+            minute = 60
+        elif(count==5):
+            minute = 240
+
+        if(not os.path.exists(path)):
+
+            p = f'./datas/okex/BTC-USD-SWAP/'+str(minute)+'minute/'
+            try:
+                os.makedirs(p,exist_ok=True)
+            except:
+                pass
+            res.to_csv(path,index=0)
+        count+=1
 
     with open(f_info,"a+",encoding='utf-8') as file:   #a :   写入文件，若文件不存在则会先创建再写入，但不会覆盖原文件，而是追加在文件末尾 
         file.write("开始运行okex API 获取数据==="+str(datetime.now()))
