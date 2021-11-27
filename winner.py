@@ -158,10 +158,10 @@ class Datainfo:
             res = res.append([{'timestamps':dw['timestamps'].values[-1],'close':dw['close'].values[-1],'KONGPAN1':KONGPAN1,'KONGPAN2':KONGPAN2,'X1':X1,'X2':X2,'Y1':Y1,'Y2':Y2,'macd1':dw['macd'].values[-1],'macd2':dw['macd'].values[-2]}], ignore_index=True)
             res.to_csv(f'./datas/okex/BTC-USD-SWAP/'+minute+'minute/'+minute+'minute.csv',index=0)
             #===判断是否买入或者卖出
-            if(KONGPAN1>0 and X1>0 and X2>0 and Y1>0 and Y2>0):           
+            if(KONGPAN1>0 and KONGPAN2>0 and X1>0 and X2>0 and Y1>0 and Y2>0 and dw['macd'].values[-1]>0):           
                 
                         
-                if(KONGPAN1>KONGPAN2 and  X1>X2 and Y1>Y2 and dw['macd'].values[-1] > dw['macd'].values[-2]  and Datainfo.getnextdata(dw,symbol)):            
+                if(KONGPAN1>KONGPAN2 and  X1>X2 and Y1>Y2 and dw['macd'].values[-1] > dw['macd'].values[-2]+3  and Datainfo.getnextdata(dw,symbol)):            
             
             
                 
