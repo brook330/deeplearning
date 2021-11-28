@@ -21,73 +21,79 @@ class NQ_Datainfo():
    
     def getdatainfo_minute(self,minute,symbol):
 
-        
+        for i in range(10000):
 
-        time.sleep(minute/100)
+            try:
 
-        t = time.time()
+                time.sleep(minute/100)
 
-        #print (t)                       #原始时间数据
-        #print (int(t))                  #秒级时间戳
-        #print (int(round(t * 1000)))    #毫秒级时间戳
-        #print (int(round(t * 1000000))) #微秒级时间戳
-        tt = str((int(t * 1000)))
-        ttt = str(int(round(t * 1000)))
+                t = time.time()
 
-        headers = {
-            'authority': 'gu.sina.cn',
-            'sec-ch-ua': '^\\^Google',
-            'sec-ch-ua-mobile': '?0',
-            'user-agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/89.0.4389.82 Safari/537.36',
-            'accept': '*/*',
-            'sec-fetch-site': 'cross-site',
-            'sec-fetch-mode': 'no-cors',
-            'sec-fetch-dest': 'script',
-            'referer': 'https://finance.sina.com.cn/futures/quotes/'+symbol+'.shtml',
-            'accept-language': 'zh-CN,zh;q=0.9',
-            'cookie': 'ustat=__115.206.97.215_'+tt+'_0.65452100; genTime='+tt+'; vt=4; QUOTES-SINA-CN=',
-        }
+                #print (t)                       #原始时间数据
+                #print (int(t))                  #秒级时间戳
+                #print (int(round(t * 1000)))    #毫秒级时间戳
+                #print (int(round(t * 1000000))) #微秒级时间戳
+                tt = str((int(t * 1000)))
+                ttt = str(int(round(t * 1000)))
 
-        params = (
-            ('symbol', symbol),
-            ('type', str(minute)),
-        )
+                headers = {
+                    'authority': 'gu.sina.cn',
+                    'sec-ch-ua': '^\\^Google',
+                    'sec-ch-ua-mobile': '?0',
+                    'user-agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/89.0.4389.82 Safari/537.36',
+                    'accept': '*/*',
+                    'sec-fetch-site': 'cross-site',
+                    'sec-fetch-mode': 'no-cors',
+                    'sec-fetch-dest': 'script',
+                    'referer': 'https://finance.sina.com.cn/futures/quotes/'+symbol+'.shtml',
+                    'accept-language': 'zh-CN,zh;q=0.9',
+                    'cookie': 'ustat=__115.206.97.215_'+tt+'_0.65452100; genTime='+tt+'; vt=4; QUOTES-SINA-CN=',
+                }
 
-        time.sleep(minute/100)
+                params = (
+                    ('symbol', symbol),
+                    ('type', str(minute)),
+                )
 
-        response = r.get('https://gu.sina.cn/ft/api/jsonp.php/var%5E%%5E20_'+symbol+'_'+str(minute)+'_'+ttt+'=/GlobalService.getMink', headers=headers, params=params ,timeout=1)
+                time.sleep(minute/100)
 
-        if response.cookies.get_dict(): #保持cookie有效 
-            s=r.session()
-            c = r.cookies.RequestsCookieJar()#定义一个cookie对象
-            c.set('cookie-name', 'cookie-value')#增加cookie的值
-            s.cookies.update(c)#更新s的cookie
-            s.get(url='https://gu.sina.cn/ft/api/jsonp.php/var%5E%%5E20_'+symbol+'_'+str(minute)+'_'+ttt+'=/GlobalService.getMink')
+                response = r.get('https://gu.sina.cn/ft/api/jsonp.php/var%5E%%5E20_'+symbol+'_'+str(minute)+'_'+ttt+'=/GlobalService.getMink', headers=headers, params=params ,timeout=1)
 
-        s =response.text
-        s = s.strip('/*<script>location.href=\'//sina.com\';</script>*/\nvar^%^20_'+symbol+'_'+str(minute)+'_'+ttt+'=([')
-        s = s.strip('])')
-        values = eval(s)
-        df = pd.DataFrame(list(values))
-        df.columns=['date','open','high','low','close','volume','p']
-        df['volume'] = df['volume'].astype('float')
-        df.to_csv(symbol+str(minute)+'.csv',index=False)
-        df = pd.read_csv(symbol+str(minute)+'.csv')
+                if response.cookies.get_dict(): #保持cookie有效 
+                    s=r.session()
+                    c = r.cookies.RequestsCookieJar()#定义一个cookie对象
+                    c.set('cookie-name', 'cookie-value')#增加cookie的值
+                    s.cookies.update(c)#更新s的cookie
+                    s.get(url='https://gu.sina.cn/ft/api/jsonp.php/var%5E%%5E20_'+symbol+'_'+str(minute)+'_'+ttt+'=/GlobalService.getMink')
+
+                s =response.text
+                s = s.strip('/*<script>location.href=\'//sina.com\';</script>*/\nvar^%^20_'+symbol+'_'+str(minute)+'_'+ttt+'=([')
+                s = s.strip('])')
+                values = eval(s)
+                df = pd.DataFrame(list(values))
+                df.columns=['date','open','high','low','close','volume','p']
+                df['volume'] = df['volume'].astype('float')
+                df.to_csv(symbol+str(minute)+'.csv',index=False)
+                df = pd.read_csv(symbol+str(minute)+'.csv')
                 
-        #保存数据 变换数据格式
-        res = pd.read_csv(symbol+'-'+str(minute)+'min.csv')
-        res = res.append([{'date':df['date'].values[-1],'open':df['open'].values[-1],'high':df['high'].values[-1],'low':df['low'].values[-1],'close':df['close'].values[-1],'volume':df['volume'].values[-1]}], ignore_index=True)
-        res['volume']=res['volume'].astype(np.float64)
-        res['close']=res['close'].astype(np.float64)
-        res['open']=res['open'].astype(np.float64)
-        res['high']=res['high'].astype(np.float64)
-        res['low']=res['low'].astype(np.float64)
-        res.to_csv(symbol+'-'+str(minute)+'min.csv')
-        res = self.getfulldata(res)
+                #保存数据 变换数据格式
+                res = pd.read_csv(symbol+'-'+str(minute)+'min.csv')
+                res = res.append([{'date':df['date'].values[-1],'open':df['open'].values[-1],'high':df['high'].values[-1],'low':df['low'].values[-1],'close':df['close'].values[-1],'volume':df['volume'].values[-1]}], ignore_index=True)
+                res['volume']=res['volume'].astype(np.float64)
+                res['close']=res['close'].astype(np.float64)
+                res['open']=res['open'].astype(np.float64)
+                res['high']=res['high'].astype(np.float64)
+                res['low']=res['low'].astype(np.float64)
+                res.to_csv(symbol+'-'+str(minute)+'min.csv',index=0)
+                res = self.getfulldata(res)
 
-        time.sleep(minute/100)
+                time.sleep(minute/100)
 
-        return res
+                return res
+                break
+            except:
+                time.sleep(5/100)
+                continue
                 
     
 
@@ -143,7 +149,7 @@ class NQ_Datainfo():
         
 
         #===判断是否买入或者卖出
-        if(KONGPAN1>0 and KONGPAN2>0 and X1>0 and X2>0 and Y1>0 and Y2>0 and dw['macd'].values[-1]>0):           
+        if(KONGPAN1>0 and X1>0 and Y1>0):           
                 
                         
             if(KONGPAN1>KONGPAN2 and  X1>X2 and Y1>Y2 and dw['macd'].values[-1] > dw['macd'].values[-2]+3):  
@@ -158,15 +164,18 @@ class NQ_Datainfo():
 
     #判断时间买卖
     def timepass(self):
-        return True
+        if(datetime.now().weekday()+1!=7):
+
+                if((datetime.now().weekday()+1 >1 and datetime.now().weekday()+1<=6 and datetime.now() >= datetime.strptime(str(datetime.now().date())+' 00:00:00', '%Y-%m-%d %H:%M:%S') and datetime.now() <= datetime.strptime(str(datetime.now().date())+' 06:00:00', '%Y-%m-%d %H:%M:%S'))  or  (datetime.now().weekday()+1<=5 and datetime.now() >= datetime.strptime(str(datetime.now().date())+' 07:00:00', '%Y-%m-%d %H:%M:%S') and datetime.now() <= datetime.strptime(str(datetime.now().date())+' 23:59:59', '%Y-%m-%d %H:%M:%S'))):
+                    return True
+                else:
+                    return False
+        else:
+            return False
 
     def time_hsi_quantian(self):
 
-        return True
-
-    def time_if_part_tian(self):
-
-        if((datetime.now().weekday()+1 >1 and datetime.now().weekday()+1<=6 and datetime.now() >= datetime.strptime(str(datetime.now().date())+' 09:30:00', '%Y-%m-%d %H:%M:%S') and datetime.now() <= datetime.strptime(str(datetime.now().date())+' 11:30:00', '%Y-%m-%d %H:%M:%S'))  or  (datetime.now().weekday()+1<=5 and datetime.now() >= datetime.strptime(str(datetime.now().date())+' 13:00:00', '%Y-%m-%d %H:%M:%S') and datetime.now() <= datetime.strptime(str(datetime.now().date())+' 15:00:00', '%Y-%m-%d %H:%M:%S'))):
+        if((datetime.now().weekday()+1 >1 and datetime.now().weekday()+1<=6 and datetime.now() >= datetime.strptime(str(datetime.now().date())+' 00:00:00', '%Y-%m-%d %H:%M:%S') and datetime.now() <= datetime.strptime(str(datetime.now().date())+' 03:00:00', '%Y-%m-%d %H:%M:%S'))  or  (datetime.now().weekday()+1<=5 and datetime.now() >= datetime.strptime(str(datetime.now().date())+' 09:15:00', '%Y-%m-%d %H:%M:%S') and datetime.now() <= datetime.strptime(str(datetime.now().date())+' 12:00:00', '%Y-%m-%d %H:%M:%S'))  or (datetime.now().weekday()+1<=5 and datetime.now() >= datetime.strptime(str(datetime.now().date())+' 13:00:00', '%Y-%m-%d %H:%M:%S') and datetime.now() <= datetime.strptime(str(datetime.now().date())+' 16:30:00', '%Y-%m-%d %H:%M:%S')) or (datetime.now().weekday()+1<=5 and datetime.now() >= datetime.strptime(str(datetime.now().date())+' 17:15:00', '%Y-%m-%d %H:%M:%S') and datetime.now() <= datetime.strptime(str(datetime.now().date())+' 23:59:59', '%Y-%m-%d %H:%M:%S'))):
             return True
         else:
             return False
