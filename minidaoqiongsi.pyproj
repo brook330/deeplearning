@@ -4,13 +4,15 @@
     <SchemaVersion>2.0</SchemaVersion>
     <ProjectGuid>14bc55c5-a205-4aec-8a27-6c5ceb493025</ProjectGuid>
     <ProjectHome>.</ProjectHome>
-    <StartupFile>minidaoqiongsi.py</StartupFile>
+    <StartupFile>
+    </StartupFile>
     <SearchPath>
     </SearchPath>
     <WorkingDirectory>.</WorkingDirectory>
     <OutputPath>.</OutputPath>
     <Name>minidaoqiongsi</Name>
     <RootNamespace>minidaoqiongsi</RootNamespace>
+    <SuppressConfigureTestFrameworkPrompt>true</SuppressConfigureTestFrameworkPrompt>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)' == 'Debug' ">
     <DebugSymbols>true</DebugSymbols>
@@ -21,10 +23,10 @@
     <EnableUnmanagedDebugging>false</EnableUnmanagedDebugging>
   </PropertyGroup>
   <ItemGroup>
-    <Compile Include="test - Copy %282%29.py" />
-    <Compile Include="test - Copy.py" />
     <Compile Include="test.py" />
     <Compile Include="minidaoqiongsi.py" />
+    <Compile Include="nq.py" />
+    <Compile Include="win.py" />
   </ItemGroup>
   <Import Project="$(MSBuildExtensionsPath32)\Microsoft\VisualStudio\v$(VisualStudioVersion)\Python Tools\Microsoft.PythonTools.targets" />
   <!-- Uncomment the CoreCompile target to enable the Build command in

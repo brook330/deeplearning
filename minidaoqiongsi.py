@@ -25,7 +25,7 @@ class NQ_Datainfo():
 
             try:
 
-                time.sleep(minute)
+                time.sleep(minute/100)
 
                 t = time.time()
 
@@ -55,7 +55,7 @@ class NQ_Datainfo():
                     ('type', str(minute)),
                 )
 
-                time.sleep(minute)
+                time.sleep(minute/100)
 
                 response = r.get('https://gu.sina.cn/ft/api/jsonp.php/var%5E%%5E20_'+symbol+'_'+str(minute)+'_'+ttt+'=/GlobalService.getMink', headers=headers, params=params ,timeout=1)
 
@@ -75,14 +75,23 @@ class NQ_Datainfo():
                 df['volume'] = df['volume'].astype('float')
                 df.to_csv(symbol+str(minute)+'.csv',index=False)
                 df = pd.read_csv(symbol+str(minute)+'.csv')
+                df['volume'].values[-1]
+                res = pd.read_csv(symbol+'-'+minute+'min.csv')
+                res = res.append([{'date':df['date'].values[-1],'open':df['open'].values[-1],'high':df['high'].values[-1],'low':df['low'].values[-1],'close':df['close'].values[-1],'volume':df['volume'].values[-1]}], ignore_index=True)
+                df['volume']=df['volume'].astype(np.float64)
+                df['close']=df['close'].astype(np.float64)
+                df['open']=df['open'].astype(np.float64)
+                df['high']=df['high'].astype(np.float64)
+                df['low']=df['low'].astype(np.float64)
+                res.to_csv(symbol+'-'+minute+'min.csv')
                 df = self.getfulldata(df)
 
-                time.sleep(minute)
+                time.sleep(minute/100)
 
                 return df
                 break
             except:
-                time.sleep(5)
+                time.sleep(5/100)
                 continue
     
 
@@ -118,14 +127,34 @@ class NQ_Datainfo():
         dw=df
         symbol = SendDingding.get_symbol_name(symbol)
 
-        VAR1 = ta.EMA(np.array(ta.EMA(np.array(df['macd'].values), timeperiod=9)), timeperiod=9)
-        kongpan = (VAR1[1:]-VAR1[:-1])/VAR1[:-1]*1000
-        ref_kongpan = (VAR1[2:]-VAR1[:-2])/VAR1[:-2]*1000
-        if(kongpan[-1:]>ref_kongpan[-1:] and kongpan[-1:]>20 and (df['macd'].values[-1]>df['macd'].values[-2] or df['macd'].values[-2]>df['macd'].values[-3])):
-            print("\n买入"+str(minute)+'分钟，'+symbol+"，符合条件，买入时间是："+str(df['date'][-1:].values[0])+"，买入值是："+str(df['close'][-1:].values),symbol)
-            SendDingding.buy_sender("\n买入"+str(minute)+'分钟，'+symbol+"，符合条件，买入时间是："+str(df['date'][-1:].values[0])+"，买入值是："+str(df['close'][-1:].values),symbol)
-        else:
-            print("\n"+str(df['date'][-1:].values[0])+"--->>>"+str(minute)+'分钟，--->>>'+symbol+"--->>>不满足条件")
+        bias=[]
+        for i in range(len(dw['close'].values)):
+            if(i<=(len(dw['close'].values)+34)):
+                bias.append((dw['close'].values[i]-dw['close5'].values[i])/dw['close5'].values[i])
+        VAR1 = ta.EMA(np.array(bias), timeperiod=60)
+        VAR2 = ta.EMA(np.array(VAR1), timeperiod=60)
+
+        KONGPAN1= (VAR2[-1]-VAR2[-2])/VAR2[-2]
+        KONGPAN2= (VAR2[-2]-VAR2[-3])/VAR2[-3]
+            
+        X1 = dw['close'].values[-1]/dw['volume'].values[-1]/dw['MA'].values[-1]*dw['obv'].values[-1]/dw['maobv'].values[-1]*dw['TRIX'].values[-1]*dw['MATRIX'].values[-1]*dw['close5'].values[-1]/dw['close135'].values[-1]*dw['macd'].values[-1]
+        X2 = dw['close'].values[-2]/dw['volume'].values[-2]/dw['MA'].values[-2]*dw['obv'].values[-2]/dw['maobv'].values[-2]*dw['TRIX'].values[-2]*dw['MATRIX'].values[-2]*dw['close5'].values[-2]/dw['close135'].values[-2]*dw['macd'].values[-2]
+
+        Y1 = dw['close'].values[-1]*float(dw['MATRIX'].values[-1])*float(dw['TRIX'].values[-1])
+        Y2 = dw['close'].values[-2]*float(dw['MATRIX'].values[-2])*float(dw['TRIX'].values[-2])
+        #print(str(i)+','+str(dw['close'].values[-1])+','+str(KONGPAN1)+','+str(KONGPAN2)+','+str(X1)+','+str(X2)+','+str(Y1)+','+str(Y2)+','+str(dw['macd'].values[-1])+','+str(dw['macd'].values[-2]))
+
+        
+
+        #===判断是否买入或者卖出
+        if(KONGPAN1>0 and KONGPAN2>0 and X1>0 and X2>0 and Y1>0 and Y2>0 and dw['macd'].values[-1]>0):           
+                
+                        
+            if(KONGPAN1>KONGPAN2 and  X1>X2 and Y1>Y2 and dw['macd'].values[-1] > dw['macd'].values[-2]+3):  
+                print("\n买入"+str(minute)+'分钟，'+symbol+"，符合条件，买入时间是："+str(df['date'][-1:].values[0])+"，买入值是："+str(df['close'][-1:].values),symbol)
+                SendDingding.buy_sender("\n买入"+str(minute)+'分钟，'+symbol+"，符合条件，买入时间是："+str(df['date'][-1:].values[0])+"，买入值是："+str(df['close'][-1:].values),symbol)
+            else:
+                print("\n"+str(df['date'][-1:].values[0])+"--->>>"+str(minute)+'分钟，--->>>'+symbol+"--->>>不满足条件")
 
        
 
@@ -484,11 +513,47 @@ if __name__ == '__main__':
     file = open(f'./datas/infodata.txt', 'w',encoding='utf-8').close()
     time.sleep(0.5)
 
+    res = pd.DataFrame(columns=('timestamps','close', 'KONGPAN1', 'KONGPAN2','X1', 'X2', 'Y1' ,'Y2', 'macd1','macd2'))
+    
+    pathlist = []
+    pathlist.append(f'./datas/okex/BTC-USD-SWAP/1minute/1minute.csv')
+    pathlist.append(f'./datas/okex/BTC-USD-SWAP/3minute/3minute.csv')
+    pathlist.append(f'./datas/okex/BTC-USD-SWAP/5minute/5minute.csv')
+    pathlist.append(f'./datas/okex/BTC-USD-SWAP/15minute/15minute.csv')
+    pathlist.append(f'./datas/okex/BTC-USD-SWAP/60minute/60minute.csv')
+    pathlist.append(f'./datas/okex/BTC-USD-SWAP/240minute/240minute.csv')
+
+    count = 0
+    for path in pathlist:
+        
+        minute = 0
+
+        if(count==0):
+            minute = 1
+        elif(count==1):
+            minute = 3
+        elif(count==2):
+            minute = 5
+        elif(count==3):
+            minute = 15
+        elif(count==4):
+            minute = 60
+        elif(count==5):
+            minute = 240
+
+        if(not os.path.exists(path)):
+
+            p = f'./datas/okex//'+str(minute)+'minute/'
+            try:
+                os.makedirs(p,exist_ok=True)
+            except:
+                pass
+            res.to_csv(path,index=0)
+        count+=1
 
     dingzhi =  RuntimeScheduler()
 
     #定义进程
-
     p1 =multiprocessing.Process(target = dingzhi.get_final_YM_5M_job)
     p2 =multiprocessing.Process(target = dingzhi.get_final_YM_15M_job)
     p3 =multiprocessing.Process(target = dingzhi.get_final_NQ_5M_job)
